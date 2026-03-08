@@ -19,9 +19,80 @@ export default async function handler(req, res) {
   const isEUR = exchange === 'paris';
   const currSym = isEUR ? '€' : '$';
 
-  const prompt = `Tu es analyste financier senior sell-side indépendant. Tu dois produire une analyse OBJECTIVE et RIGOUREUSE de ${name} (${ticker}), cotée ${isEUR ? 'Euronext Paris' : 'NYSE/NASDAQ'}, secteur : ${sector || 'non précisé'}.
+  // ── Détection automatique du profil d'entreprise ──────────────
+  const growthRate = parseFloat(revenueGrowth) || 0;
+  const peVal = parseFloat(forwardPE || pe) || 0;
+  const sectorLow = (sector || '').toLowerCase();
 
-DONNÉES RÉELLES DISPONIBLES (utilise-les comme base principale) :
+  const isGrowth = growthRate > 15 || peVal > 35 ||
+    ['technology','tech','software','cloud','e-commerce','semiconductor','intelligence artificielle','consumer cyclical'].some(s => sectorLow.includes(s));
+
+  const isPharma = ['pharmaceutical','biotech','healthcare','santé','pharma','biotechnologie'].some(s => sectorLow.includes(s));
+
+  const isCyclical = !isGrowth && ['energy','oil','mining','steel','automotive','construction','matières premières','énergie','automobile','basic materials'].some(s => sectorLow.includes(s));
+
+  const isValue = !isGrowth && !isPharma && !isCyclical &&
+    ['bank','insurance','utilities','telecom','real estate','banque','assurance','immobilier','télécommunications','financial'].some(s => sectorLow.includes(s));
+
+  let profileLabel, profileInstructions, primaryMetrics, penalizedMetrics;
+
+  if (isGrowth) {
+    profileLabel = 'CROISSANCE';
+    primaryMetrics = 'EV/Revenue, EV/EBITDA, croissance CA YoY et CAGR 3 ans, marge brute, Rule of 40, PEG ratio';
+    penalizedMetrics = 'NE PAS pénaliser un P/E élevé si croissance CA > 15%/an. Un P/E de 40-80x est normal pour tech en forte croissance. Évaluer via PEG et Rule of 40 (croissance CA% + marge opér.%).';
+    profileInstructions = `Entreprise de CROISSANCE : les multiples P/E traditionnels sont peu pertinents.
+- Si Rule of 40 > 40 → signal positif fort
+- Si EV/Revenue < 5x avec croissance >20% → potentiellement sous-évalué
+- Si EV/Revenue > 20x avec ralentissement → alerte surévaluation
+- Comparer uniquement à des pairs growth (AWS/Azure pour cloud, etc.)
+- Amazon se valorise sur AWS margins + FCF, pas sur P/E groupe`;
+  } else if (isPharma) {
+    profileLabel = 'PHARMA/BIOTECH';
+    primaryMetrics = 'Pipeline produits (phases), P/FCF, marge nette, R&D/CA ratio, exclusivités brevets, revenus récurrents';
+    penalizedMetrics = 'NE PAS utiliser P/E comme métrique principale. Les dépenses R&D compriment les bénéfices artificiellement. Utiliser EV/EBITDA ajusté, P/FCF, valeur pipeline.';
+    profileInstructions = `Entreprise PHARMA/BIOTECH : valorisation dépend du pipeline.
+- Pipeline phase 3 avec catalyseurs proches → prime justifiée
+- Brevets expirant < 3 ans → risque concurrence générique à quantifier
+- P/FCF < 15x = attractif pour pharma établi
+- R&D > 15% CA = normal et positif si pipeline solide`;
+  } else if (isCyclical) {
+    profileLabel = 'CYCLIQUE';
+    primaryMetrics = 'P/B, EV/EBITDA normalisé sur cycle, dette nette, FCF cycle bas, dividende soutenabilité';
+    penalizedMetrics = 'NE PAS utiliser P/E au pic de cycle (artificiellement bas). Utiliser P/E normalisé cycle complet (7-10 ans). EV/EBITDA normalisé est la métrique clé.';
+    profileInstructions = `Entreprise CYCLIQUE : timing dans le cycle est crucial.
+- Si secteur en haut de cycle → pénaliser valorisation
+- Si secteur en bas de cycle → prime de redressement justifiée
+- P/B < 1 en bas de cycle = opportunité
+- Dette nette/EBITDA > 3x en bas de cycle = risque critique`;
+  } else if (isValue) {
+    profileLabel = 'VALUE/RENDEMENT';
+    primaryMetrics = 'P/E vs médiane sectorielle, P/B, dividende yield et croissance, ROE, ROIC, payout soutenabilité, dette/EBITDA';
+    penalizedMetrics = 'Pénaliser P/E > 20x sur ce profil. P/B > 3x sans ROE exceptionnel = trop cher. Dividende non couvert par FCF = signal négatif fort.';
+    profileInstructions = `Entreprise VALUE/RENDEMENT : valorisation traditionnelle appropriée.
+- P/E < médiane sectorielle avec ROE stable = attractif
+- Dividende yield > 3% + payout < 60% = rendement soutenable
+- ROE > 12% régulier = qualité de business
+- P/B < 1.5 sur banque/assurance = sous-évalué`;
+  } else {
+    profileLabel = 'QUALITÉ';
+    primaryMetrics = 'PEG ratio, ROIC, marge nette trend, FCF Yield, croissance dividende CAGR, pricing power';
+    penalizedMetrics = 'Un P/E premium (20-30x) est JUSTIFIÉ si ROIC > 15% et croissance régulière. Pénaliser seulement si P/E > 35x sans accélération de croissance.';
+    profileInstructions = `Entreprise de QUALITÉ (wide moat) : prime de valorisation justifiée.
+- ROIC > 15% régulier = avantage concurrentiel fort → P/E premium justifié
+- PEG < 1.5 = attractif même avec P/E élevé
+- Marge brute stable/croissante = pricing power défensif
+- FCF Yield > 4% = génération de valeur solide`;
+  }
+
+  const prompt = `Tu es analyste financier senior sell-side indépendant. Analyse OBJECTIVE et RIGOUREUSE de ${name} (${ticker}), cotée ${isEUR ? 'Euronext Paris' : 'NYSE/NASDAQ'}, secteur : ${sector || 'non précisé'}.
+
+⚠️ PROFIL DÉTECTÉ : ${profileLabel}
+${profileInstructions}
+
+MÉTRIQUES PRIORITAIRES POUR CE PROFIL : ${primaryMetrics}
+RÈGLE DE VALORISATION SPÉCIFIQUE : ${penalizedMetrics}
+
+DONNÉES DISPONIBLES :
 - Cours actuel : ${price}
 - Plus haut 52s : ${high52 || 'N/A'} | Plus bas 52s : ${low52 || 'N/A'}
 - P/E trailing : ${pe || 'N/A'} | P/E forward : ${forwardPE || 'N/A'}
@@ -33,18 +104,19 @@ DONNÉES RÉELLES DISPONIBLES (utilise-les comme base principale) :
 - Croissance CA : ${revenueGrowth || 'N/A'} | Rendement div. : ${divYield || 'N/A'}
 
 RÈGLES IMPÉRATIVES :
-1. La RECOMMANDATION doit découler logiquement des données ci-dessus. Si le P/E est supérieur à la médiane sectorielle ET la croissance est faible → ALLÉGER ou VENDRE. Ne pas donner systématiquement ACHETER.
-2. Le SCORE DE VALORISATION (1-10) doit refléter la cherté relative : 1=très surévalué, 5=juste prix, 10=très sous-évalué.
-3. Les FEUX TRICOLORES (valLights) doivent être honnêtes : signal RED si le multiple est élevé vs secteur.
-4. Utilise tes connaissances financières réelles sur cette entreprise pour les données historiques.
-5. Distribution attendue sur l'ensemble de tes analyses : ~30% ACHETER, ~40% NEUTRE/ACCUMULER, ~30% ALLÉGER/VENDRE.
+1. La recommandation découle des métriques prioritaires du profil ${profileLabel}.
+2. SCORE VALORISATION (1-10) : comparaison vs pairs du MÊME profil. 1=très surévalué, 5=juste prix, 10=très sous-évalué.
+3. FEUX TRICOLORES : honnêtes, comparés vs pairs du même profil.
+4. Distribution cible : ~30% ACHETER, ~40% NEUTRE/ACCUMULER, ~30% ALLÉGER/VENDRE.
+5. Le VERDICT mentionne explicitement le profil et justifie via métriques adaptées.
 
-IMPORTANT : Réponds UNIQUEMENT en JSON valide strict, sans backticks, sans texte avant ou après.
+IMPORTANT : JSON valide strict uniquement, sans backticks ni texte avant/après.
 
 {
   "reco": "ACHETER | ACCUMULER | NEUTRE | ALLÉGER | VENDRE",
   "target": "ex: 199 ${currSym}",
   "upside": "ex: +49%",
+  "profile": "${profileLabel}",
   "nextEvent": {"label":"ex: Résultats T1 2025","date":"ex: 24 avril 2025"},
   "kpis": [
     {"label":"CA annuel","val":"ex: 5,6 Md${currSym}","sub":"ex: 2024e, +3% vs 2023","color":"teal"},
@@ -119,7 +191,7 @@ IMPORTANT : Réponds UNIQUEMENT en JSON valide strict, sans backticks, sans text
     {"l":"ROE","v":"ex: 16,5%","c":"green"},
     {"l":"Div. Yield","v":"ex: 3,9%","c":"amber"},
     {"l":"Payout","v":"ex: 35%","c":"teal"},
-    {"l":"Marge brute","v":"ex: 28%","c":"green"},
+    {"l":"Marge EBITDA","v":"ex: 24,5%","c":"green"},
     {"l":"ROIC","v":"ex: 12%","c":"teal"}
   ],
   "levels": [
@@ -144,7 +216,7 @@ IMPORTANT : Réponds UNIQUEMENT en JSON valide strict, sans backticks, sans text
     {"warn":false,"title":"Risque modéré","text":"Description du risque avec données."},
     {"warn":true,"title":"Point de vigilance","text":"Description du risque majeur."}
   ],
-  "verdict": "2-3 phrases résumant la thèse avec chiffres clés. HTML <b> autorisé. Sois honnête sur la valorisation."
+  "verdict": "2-3 phrases mentionnant le profil ${profileLabel}. Justifier la reco par les métriques adaptées (PEG/EV-Revenue pour croissance, P/FCF pour pharma, etc.). HTML <b> autorisé. Sois honnête."
 }`;
 
   try {
