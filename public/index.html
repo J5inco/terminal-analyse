@@ -2088,21 +2088,21 @@ async function renderPortfolio() {
           </div>
         </div>
         <div class="pf-cell" style="color:var(--light)">${r.p.qty}</div>
-        <div class="pf-cell">${r.p.pru.toFixed(2)}</div>
-        <div class="pf-cell" style="color:${r.q?.pos?'var(--green)':'var(--red)'}">${r.prixActuel>0?r.prixActuel.toFixed(2):'—'}</div>
-        <div class="pf-cell" style="color:var(--white)">${r.valeur>0?r.valeur.toLocaleString('fr-FR',{maximumFractionDigits:0})+'€':'—'}</div>
+        <div class="pf-cell">${r.sym}${r.p.pru.toFixed(2)}</div>
+        <div class="pf-cell" style="color:${r.prixActuel>0?(r.q?.pos?'var(--green)':'var(--red)'):'var(--muted)'}">${r.prixActuel>0?r.sym+r.prixActuel.toFixed(2):'—'}</div>
+        <div class="pf-cell" style="color:var(--white)">${r.valeur>0?r.sym+r.valeur.toLocaleString('fr-FR',{maximumFractionDigits:0}):'—'}</div>
         <div class="pf-cell">
           <div style="color:${r.plPct>=0?'var(--green)':'var(--red)'};font-weight:700">${r.plPct>=0?'+':''}${r.plPct.toFixed(2)}%</div>
-          <div style="font-size:9px;color:${r.plVal>=0?'var(--green)':'var(--red)'}">${r.plVal>=0?'+':''}${r.plVal.toLocaleString('fr-FR',{maximumFractionDigits:0})}€</div>
+          <div style="font-size:9px;color:${r.plVal>=0?'var(--green)':'var(--red)'}">${r.plVal>=0?'+':'-'}${r.sym}${Math.abs(r.plVal).toLocaleString('fr-FR',{maximumFractionDigits:0})}</div>
         </div>
         <div class="pf-cell">
-          ${r.p.divAnnual?`<div style="color:var(--teal)">${r.divTotal.toFixed(0)}€/an</div>
+          ${r.p.divAnnual?`<div style="color:var(--teal)">${r.sym}${r.divTotal.toFixed(0)}/an</div>
           <div style="font-size:9px;color:var(--muted)">Yield PRU : ${r.yieldPRU.toFixed(2)}%</div>`
           :`<button onclick="editDiv('${r.p.ticker}')" style="font-size:9px;color:var(--muted);background:none;border:1px dashed var(--brd);border-radius:4px;padding:2px 6px;cursor:pointer;font-family:var(--mono)">+ div</button>`}
         </div>
         <div class="pf-cell">
-          ${r.p.target?`<div style="color:${r.targetPct>=0?'var(--green)':'var(--amber)'}">→ ${r.p.target.toFixed(2)}</div>
-          <div style="font-size:9px;color:${r.targetPct>=0?'var(--green)':'var(--amber)'}">${r.targetPct>=0?'+':''}${r.targetPct?.toFixed(1)}%</div>`
+          ${r.p.target?`<div style="color:${r.targetPct!=null&&r.targetPct>=0?'var(--green)':'var(--amber)'}">→ ${r.sym}${r.p.target.toFixed(2)}</div>
+          <div style="font-size:9px;color:${r.targetPct!=null&&r.targetPct>=0?'var(--green)':'var(--amber)'}">${r.targetPct!=null?(r.targetPct>=0?'+':'')+r.targetPct.toFixed(1)+'%':'—'}</div>`
           :`<button onclick="editTarget('${r.p.ticker}')" style="font-size:9px;color:var(--muted);background:none;border:1px dashed var(--brd);border-radius:4px;padding:2px 6px;cursor:pointer;font-family:var(--mono)">+ cible</button>`}
         </div>
         <div class="pf-cell"><button onclick="removePosition('${r.p.ticker}')" style="background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.25);color:var(--red);border-radius:5px;padding:3px 8px;cursor:pointer;font-size:10px">✕</button></div>
