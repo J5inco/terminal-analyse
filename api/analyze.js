@@ -41,11 +41,24 @@ Toutes les clés et tableaux sont OBLIGATOIRES — utilise tes connaissances pou
   },
   "segments": {
     "labels": ["Segment principal","Segment 2","Segment 3"],
-    "data": [50, 30, 20]
+    "data": [50, 30, 20],
+    "ca": ["ex: 2,8 Md€","ex: 1,7 Md€","ex: 1,1 Md€"]
   },
   "peers": {
     "labels": ["${tickerShort}","Comparable 1","Comparable 2","Comparable 3","Moy. secteur"],
     "pe": [15.0, 18.0, 22.0, 12.0, 17.0]
+  },
+  "bnaHistory": {
+    "labels": ["2019","2020","2021","2022","2023","2024"],
+    "data": [5.2, 4.8, 6.1, 7.5, 8.9, 10.2]
+  },
+  "divHistory": {
+    "labels": ["2019","2020","2021","2022","2023","2024"],
+    "data": [1.5, 1.2, 1.6, 2.0, 2.4, 2.8]
+  },
+  "debtHistory": {
+    "labels": ["2019","2020","2021","2022","2023","2024"],
+    "data": [3.2, 4.1, 3.5, 2.8, 2.2, 1.8]
   },
   "ratios": [
     {"l":"P/E TTM","v":"ex: 8,8x","c":"green"},
@@ -92,7 +105,7 @@ Toutes les clés et tableaux sont OBLIGATOIRES — utilise tes connaissances pou
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
-        max_tokens: 3000,
+        max_tokens: 4000,
         messages: [{ role: 'user', content: prompt }],
       }),
     });
