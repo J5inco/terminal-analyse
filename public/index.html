@@ -917,7 +917,7 @@ function renderPanel(s, q, d) {
           <button onclick="openChartModal()" style="background:rgba(59,130,246,.12);border:1px solid rgba(59,130,246,.3);color:var(--blue2);border-radius:6px;padding:3px 10px;cursor:pointer;font-size:9px;font-family:var(--mono);transition:all .15s" onmouseover="this.style.background='rgba(59,130,246,.22)'" onmouseout="this.style.background='rgba(59,130,246,.12)'">⛶ Plein écran</button>
         </div>
         <div style="display:flex;gap:4px;margin-bottom:8px;flex-wrap:wrap" id="range-btns">
-          ${['1h','1d','5d','1mo','6mo','1y','3y','5y'].map((r,i)=>`<button onclick="loadChart('${r}',this)" class="chip${r==='1mo'?' on':''}" style="flex:none;padding:3px 8px;font-size:9px">${r==='1h'?'1H':r==='1d'?'1J':r==='5d'?'1S':r.replace('mo','M').replace('y','A')}</button>`).join('')}
+          ${['1h','1d','5d','1mo','6mo','1y','3y','5y','10y'].map((r,i)=>`<button onclick="loadChart('${r}',this)" class="chip${r==='1mo'?' on':''}" style="flex:none;padding:3px 8px;font-size:9px">${r==='1h'?'1H':r==='1d'?'1J':r==='5d'?'1S':r.replace('mo','M').replace('y','A')}</button>`).join('')}
         </div>
         <canvas id="ch-price" height="80" style="max-height:80px"></canvas>
       </div>
@@ -982,18 +982,18 @@ function renderPanel(s, q, d) {
     <div class="g3">
       <div class="gcard"><h4>BNA par action — historique</h4>
         ${d.bnaHistory?.labels?.length
-          ? `<canvas id="ch-bna" height="110"></canvas>`
-          : `<div style="height:110px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:11px;text-align:center">Données non disponibles<br>dans l'analyse IA</div>`}
+          ? `<canvas id="ch-bna" height="120"></canvas>`
+          : `<div style="height:120px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:11px;text-align:center">Données non disponibles<br>dans l'analyse IA</div>`}
       </div>
       <div class="gcard"><h4>Dividende par action — historique</h4>
         ${d.divHistory?.labels?.length
-          ? `<canvas id="ch-div" height="110"></canvas>`
-          : `<div style="height:110px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:11px;text-align:center">Données non disponibles<br>dans l'analyse IA</div>`}
+          ? `<canvas id="ch-div" height="120"></canvas>`
+          : `<div style="height:120px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:11px;text-align:center">Données non disponibles<br>dans l'analyse IA</div>`}
       </div>
       <div class="gcard"><h4>Dette nette & Levier</h4>
         ${d.debtHistory?.labels?.length
-          ? `<canvas id="ch-debt" height="110"></canvas>`
-          : `<div style="height:110px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:11px;text-align:center">Données non disponibles<br>dans l'analyse IA</div>`}
+          ? `<canvas id="ch-debt" height="120"></canvas>`
+          : `<div style="height:120px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:11px;text-align:center">Données non disponibles<br>dans l'analyse IA</div>`}
         ${q.debtToEquity!=null||q.totalDebt!=null?`
         <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
           ${q.totalDebt!=null?`<div style="flex:1;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:8px;padding:7px 10px;min-width:80px">
@@ -1951,7 +1951,7 @@ async function openChartModal() {
       </div>
       <div style="display:flex;align-items:center;gap:8px">
         <div style="display:flex;gap:3px" id="modal-range-btns">
-          ${['1h','1d','5d','1mo','6mo','1y','3y','5y'].map((r,i)=>`<button onclick="loadModalChart('${r}',this)" class="chip${r==='1mo'?' on':''}" style="flex:none;padding:4px 10px">${r==='1h'?'1H':r==='1d'?'1J':r==='5d'?'1S':r.replace('mo','M').replace('y','A')}</button>`).join('')}
+          ${['1h','1d','5d','1mo','6mo','1y','3y','5y','10y'].map((r,i)=>`<button onclick="loadModalChart('${r}',this)" class="chip${r==='1mo'?' on':''}" style="flex:none;padding:4px 10px">${r==='1h'?'1H':r==='1d'?'1J':r==='5d'?'1S':r.replace('mo','M').replace('y','A')}</button>`).join('')}
         </div>
         <button onclick="closeChartModal()" style="background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.3);color:var(--red);border-radius:6px;padding:5px 12px;cursor:pointer;font-size:11px;font-family:var(--mono)">✕ Fermer</button>
       </div>
