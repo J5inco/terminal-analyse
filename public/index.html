@@ -942,7 +942,7 @@ function renderPanel(s, q, d) {
   <div class="tc" id="tc-fin">
     <div class="g2">
       <div class="gcard"><h4>Chiffre d'affaires (${d.ca?.unit||''})</h4>
-        ${d.ca?.labels?.length ? `<div style="position:relative;height:240px"><canvas id="ch-ca"></canvas></div>` : `<div style="height:240px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:11px">Données non disponibles dans l'analyse IA</div>`}
+        ${d.ca?.labels?.length ? `<div style="position:relative;height:240px;overflow:hidden"><canvas id="ch-ca"></canvas></div>` : `<div style="height:240px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:11px">Données non disponibles dans l'analyse IA</div>`}
       </div>
       <div class="gcard"><h4>Résultat net & Marge opérationnelle</h4>
         ${d.earnings?.labels?.length ? `<div style="position:relative;height:240px"><canvas id="ch-mg"></canvas></div>` : `<div style="height:240px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:11px">Données non disponibles dans l'analyse IA</div>`}
