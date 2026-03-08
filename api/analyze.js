@@ -16,6 +16,21 @@ export default async function handler(req, res) {
   if (!ticker) return res.status(400).json({ error: 'Missing ticker' });
 
   const tickerShort = ticker.replace('.PA','').replace('-','.');
+
+  // ── Position dans le range 52 semaines ──────────────────────
+  const priceNum  = parseFloat(price) || 0;
+  const high52Num = parseFloat(high52) || 0;
+  const low52Num  = parseFloat(low52) || 0;
+  let rangePosition = null;
+  let rangeContext  = '';
+  if (priceNum > 0 && high52Num > 0 && low52Num > 0 && high52Num > low52Num) {
+    rangePosition = ((priceNum - low52Num) / (high52Num - low52Num) * 100).toFixed(0);
+    const correctionFromHigh = ((high52Num - priceNum) / high52Num * 100).toFixed(0);
+    if (rangePosition <= 20)      rangeContext = `⚠️ ZONE BASSE : cours dans les 20% bas du range 52s (position ${rangePosition}%). Correction de -${correctionFromHigh}% depuis le plus haut. La correction est déjà largement intégrée — NE PAS sur-pénaliser la valorisation actuelle. Préférer ACCUMULER ou NEUTRE sauf fondamentaux détériorés.`;
+    else if (rangePosition <= 35) rangeContext = `📉 ZONE BASSE-MÉDIANE : cours dans les 35% bas du range 52s (position ${rangePosition}%). Correction de -${correctionFromHigh}% depuis le plus haut. La valorisation actuelle intègre déjà un scénario pessimiste — tenir compte de ce contexte.`;
+    else if (rangePosition >= 85) rangeContext = `⚠️ ZONE HAUTE : cours dans les 15% hauts du range 52s (position ${rangePosition}%). Peu de marge avant les plus hauts — tenir compte dans la recommandation.`;
+    else                          rangeContext = `Cours en milieu de range 52s (position ${rangePosition}%, correction de -${correctionFromHigh}% depuis le plus haut).`;
+  }
   const isEUR = exchange === 'paris';
   const currSym = isEUR ? '€' : '$';
 
@@ -95,6 +110,7 @@ RÈGLE DE VALORISATION SPÉCIFIQUE : ${penalizedMetrics}
 DONNÉES DISPONIBLES :
 - Cours actuel : ${price}
 - Plus haut 52s : ${high52 || 'N/A'} | Plus bas 52s : ${low52 || 'N/A'}
+- Position dans le range 52s : ${rangeContext || 'N/A'}
 - P/E trailing : ${pe || 'N/A'} | P/E forward : ${forwardPE || 'N/A'}
 - BNA : ${eps || 'N/A'} | FCF/action : ${fcfPerShare || 'N/A'}
 - EV/EBITDA : ${evToEbitda || 'N/A'} | P/B : ${priceToBook || 'N/A'} | P/FCF : ${priceFCF || 'N/A'}
@@ -105,10 +121,12 @@ DONNÉES DISPONIBLES :
 
 RÈGLES IMPÉRATIVES :
 1. La recommandation découle des métriques prioritaires du profil ${profileLabel}.
-2. SCORE VALORISATION (1-10) : comparaison vs pairs du MÊME profil. 1=très surévalué, 5=juste prix, 10=très sous-évalué.
-3. FEUX TRICOLORES : honnêtes, comparés vs pairs du même profil.
+2. SCORE VALORISATION (1-10) : comparaison vs pairs du MÊME profil ET vs historique propre de l'action. 1=très surévalué, 5=juste prix, 10=très sous-évalué.
+3. FEUX TRICOLORES : honnêtes, comparés vs pairs du même profil ET vs moyenne historique propre de l'action (5 ans).
 4. Distribution cible : ~30% ACHETER, ~40% NEUTRE/ACCUMULER, ~30% ALLÉGER/VENDRE.
 5. Le VERDICT mentionne explicitement le profil et justifie via métriques adaptées.
+6. POSITION DANS LE RANGE 52S : si l'action a déjà corrigé de >25% depuis ses plus hauts, c'est un signal que le marché a déjà intégré les risques. Ne pas recommander ALLÉGER/VENDRE sur une action déjà fortement corrigée sauf si les fondamentaux se sont détériorés structurellement.
+7. COMPARAISON HISTORIQUE : compare le P/E ou EV/EBITDA actuel à la MOYENNE HISTORIQUE PROPRE de l'entreprise sur 5 ans (pas uniquement vs secteur). Un P/E en dessous de sa propre moyenne historique = signal positif même si le multiple semble élevé en absolu.
 
 IMPORTANT : JSON valide strict uniquement, sans backticks ni texte avant/après.
 
