@@ -1595,7 +1595,7 @@ async function loadPortfolioFromDB() {
     const r = await fetch(`${SUPABASE_URL}/rest/v1/portfolios?user_id=eq.${currentUser.id}&select=*`,{
       headers:{'apikey':SUPABASE_KEY,'Authorization':`Bearer ${sbToken}`}
     });
-    if (r.ok) { const d = await r.json(); portfolio = Array.isArray(d) ? d.map(row=>row.data) : []; }
+    if (r.ok) { const d = await r.json(); portfolio = Array.isArray(d) && d.length > 0 ? (d[0].positions || []) : []; }
   } catch(e) { portfolio = []; }
 }
 
@@ -1693,24 +1693,29 @@ async function handleSignUp() {
 
 
 
-function showPortfolio() {
+async function showPortfolio() {
   curStock = null;
   document.getElementById('welcomeScreen').style.display = 'none';
   document.getElementById('analysisPanel').style.display = 'block';
+  await loadPortfolioFromDB();
   buildList();
   renderPortfolio();
 }
 
 async function renderPortfolio() {
   const ap = document.getElementById('analysisPanel');
-  if (portfolio.length > 0) { ap.innerHTML = `<div class="pf-screen"><div style="display:flex;align-items:center;gap:10px"><div class="spin" style="width:20px;height:20px;border-width:2px"></div><span style="color:var(--muted);font-size:11px">Chargement des cours…</span></div></div>`; await Promise.allSettled(portfolio.map(p=>fetchQuote(p.ticker))); }
+  if (portfolio.length > 0) {
+    ap.innerHTML = `<div class="pf-screen"><div style="display:flex;align-items:center;gap:10px"><div class="spin" style="width:20px;height:20px;border-width:2px"></div><span style="color:var(--muted);font-size:11px">Chargement des cours…</span></div></div>`;
+    await Promise.allSettled(portfolio.map(p=>fetchQuote(p.ticker)));
+  }
 
   let totalInvest=0, totalValue=0, totalDiv=0;
   const COLORS=['#3b82f6','#06b6d4','#fbbf24','#f87171','#06b6d4','#4ade80','#fb923c','#38bdf8','#e879f9','#2dd4bf'];
 
   const rows = portfolio.map((p,i) => {
     const q = quotes[p.ticker]||{};
-    const prixActuel = q.priceRaw||0;
+    const prixActuel = q.priceRaw || parseFloat((q.price||"0").replace(/[^\d.]/g,"")) || 0;
+    const sym = q.currency==='EUR' ? '€' : '$';
     const valeur = prixActuel*p.qty;
     const invest = p.pru*p.qty;
     const plVal  = valeur-invest;
@@ -1719,7 +1724,7 @@ async function renderPortfolio() {
     const yieldPRU = p.pru>0&&p.divAnnual?((p.divAnnual/p.pru)*100):0;
     const targetPct = p.target&&prixActuel>0?((p.target-prixActuel)/prixActuel*100):null;
     totalInvest += invest; totalValue += valeur; totalDiv += divTotal;
-    return {p, q, prixActuel, valeur, invest, plVal, plPct, divTotal, yieldPRU, targetPct, color:COLORS[i%COLORS.length]};
+    return {p, q, prixActuel, sym, valeur, invest, plVal, plPct, divTotal, yieldPRU, targetPct, color:COLORS[i%COLORS.length]};
   });
 
   const totalPL    = totalValue-totalInvest;
