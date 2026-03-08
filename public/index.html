@@ -942,16 +942,16 @@ function renderPanel(s, q, d) {
   <div class="tc" id="tc-fin">
     <div class="g2">
       <div class="gcard"><h4>Chiffre d'affaires (${d.ca?.unit||''})</h4>
-        ${d.ca?.labels?.length ? `<canvas id="ch-ca" height="120" style="width:100%;height:120px"></canvas>` : `<div style="height:120px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:11px">Données non disponibles dans l'analyse IA</div>`}
+        ${d.ca?.labels?.length ? `<div style="position:relative;height:120px"><canvas id="ch-ca"></canvas></div>` : `<div style="height:120px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:11px">Données non disponibles dans l'analyse IA</div>`}
       </div>
       <div class="gcard"><h4>Résultat net & Marge opérationnelle</h4>
-        ${d.earnings?.labels?.length ? `<canvas id="ch-mg" height="120" style="width:100%;height:120px"></canvas>` : `<div style="height:120px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:11px">Données non disponibles dans l'analyse IA</div>`}
+        ${d.earnings?.labels?.length ? `<div style="position:relative;height:120px"><canvas id="ch-mg"></canvas></div>` : `<div style="height:120px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:11px">Données non disponibles dans l'analyse IA</div>`}
       </div>
     </div>
     <div class="g2">
       <div class="gcard"><h4>Répartition par segment</h4>
         ${d.segments?.labels?.length
-          ? `<canvas id="ch-sk" height="140"></canvas>
+          ? `<div style="position:relative;height:140px"><canvas id="ch-sk"></canvas></div>
              <div style="display:flex;flex-direction:column;gap:4px;margin-top:10px">
                ${d.segments.labels.map((l,i)=>{
                  const val = d.segments.data?.[i]||0;
@@ -982,12 +982,12 @@ function renderPanel(s, q, d) {
     <div class="g2">
       <div class="gcard"><h4>BNA par action — historique</h4>
         ${d.bnaHistory?.labels?.length
-          ? `<canvas id="ch-bna" height="120" style="width:100%;height:120px"></canvas>`
+          ? `<div style="position:relative;height:120px"><canvas id="ch-bna"></canvas></div>`
           : `<div style="height:120px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:11px;text-align:center">Données non disponibles<br>dans l'analyse IA</div>`}
       </div>
       <div class="gcard"><h4>Dividende par action — historique</h4>
         ${d.divHistory?.labels?.length
-          ? `<canvas id="ch-div" height="120" style="width:100%;height:120px"></canvas>`
+          ? `<div style="position:relative;height:120px"><canvas id="ch-div"></canvas></div>`
           : `<div style="height:120px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:11px;text-align:center">Données non disponibles<br>dans l'analyse IA</div>`}
       </div>
     </div>
@@ -996,7 +996,7 @@ function renderPanel(s, q, d) {
       <div style="display:flex;gap:16px;align-items:flex-start">
         <div style="flex:1;min-width:0">
           ${d.debtHistory?.labels?.length
-            ? `<canvas id="ch-debt" height="120" style="width:100%;height:120px"></canvas>`
+            ? `<div style="position:relative;height:120px"><canvas id="ch-debt"></canvas></div>`
             : `<div style="height:120px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:11px;text-align:center">Données non disponibles<br>dans l'analyse IA</div>`}
         </div>
         ${q.debtToEquity!=null||q.totalDebt!=null?`
@@ -1017,7 +1017,7 @@ function renderPanel(s, q, d) {
   <div class="tc" id="tc-val">
     <div class="g2">
       <div class="gcard"><h4>P/E vs comparables sectoriels</h4>
-        ${d.peers?.labels?.length ? `<canvas id="ch-pe" height="180" style="width:100%;height:180px"></canvas>` : `<div style="height:180px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:11px">Données comparables non disponibles dans l'analyse IA</div>`}
+        ${d.peers?.labels?.length ? `<div style="position:relative;height:180px"><canvas id="ch-pe"></canvas></div>` : `<div style="height:180px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:11px">Données comparables non disponibles dans l'analyse IA</div>`}
       </div>
       <div class="gcard"><h4>Métriques de valorisation</h4>
         <div style="display:flex;flex-direction:column;gap:5px">
