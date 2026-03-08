@@ -74,12 +74,6 @@ export default async function handler(req, res) {
       ? `${current.toFixed(2).replace('.', ',')} €`
       : `${sym}${current.toFixed(2)}`;
     const fmtChange = `${changePct >= 0 ? '+' : ''}${changePct.toFixed(2)}%`;
-    const cap = meta.marketCap;
-    const fmtCap = cap
-      ? cap >= 1e12 ? `${sym}${(cap/1e12).toFixed(2)}T`
-        : cap >= 1e9 ? `${sym}${(cap/1e9).toFixed(1)}B`
-        : `${sym}${(cap/1e6).toFixed(0)}M`
-      : '—';
     const exch = exchange.toLowerCase().includes('paris') || ticker.includes('.PA') ? 'paris' : 'us';
 
     let fundamentals = {};
@@ -123,6 +117,7 @@ export default async function handler(req, res) {
           beta:    ks.beta?.raw || sd.beta?.raw || null,
           float:   ks.floatShares?.raw || null,
           sharesOutstanding: sharesRaw,
+          totalDebt: sd.totalDebt?.raw || ks.totalDebt?.raw || null,
           avgVolume30d: sd.averageVolume?.raw || null,
           volume:       meta.regularMarketVolume || null,
           divYield, divAnnual,
@@ -137,6 +132,16 @@ export default async function handler(req, res) {
         };
       }
     } catch(e) { /* fundamentals not critical */ }
+
+    // Cap boursière : Yahoo meta en priorité, sinon calcul shares × cours, sinon summaryDetail
+    const cap = meta.marketCap
+      || (fundamentals.sharesOutstanding > 0 && current ? fundamentals.sharesOutstanding * current : null);
+    const fmtCap = cap
+      ? cap >= 1e12 ? `${sym}${(cap/1e12).toFixed(2)} Bn`
+        : cap >= 1e9 ? `${sym}${(cap/1e9).toFixed(1)} Md`
+        : cap >= 1e6 ? `${sym}${(cap/1e6).toFixed(0)} M`
+        : `${sym}${cap.toFixed(0)}`
+      : '—';
 
     return res.status(200).json({
       ticker: ticker.toUpperCase(), name, price: fmtPrice, priceRaw: current,
