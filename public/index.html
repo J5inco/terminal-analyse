@@ -178,6 +178,29 @@ body{background:var(--bg);color:var(--txt);font-family:var(--sans);height:100vh;
 /* TOAST */
 .toast{position:fixed;bottom:20px;right:20px;background:var(--card);border:1px solid var(--teal);color:var(--teal);padding:10px 16px;border-radius:7px;font-size:11px;font-family:var(--mono);z-index:300;animation:fadeup .2s ease;pointer-events:none}
 
+/* PORTFOLIO */
+.pf-screen{padding:16px;display:flex;flex-direction:column;gap:12px}
+.pf-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.pf-kpi{background:var(--card);border:1px solid var(--brd);border-radius:8px;padding:12px 14px}
+.pf-kpi-l{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px}
+.pf-kpi-v{font-size:20px;font-weight:700;font-family:var(--mono)}
+.pf-kpi-s{font-size:9px;color:var(--muted);margin-top:2px}
+.pf-table{background:var(--card);border:1px solid var(--brd);border-radius:8px;overflow:hidden}
+.pf-thead{display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr 1fr 1fr 80px;gap:0;padding:8px 14px;background:var(--surf);border-bottom:1px solid var(--brd)}
+.pf-th{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;text-align:right}
+.pf-th:first-child{text-align:left}
+.pf-row{display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr 1fr 1fr 80px;gap:0;padding:10px 14px;border-bottom:1px solid var(--brd);transition:background .1s;align-items:center}
+.pf-row:hover{background:rgba(255,255,255,.03)}
+.pf-row:last-child{border-bottom:none}
+.pf-cell{font-size:11px;text-align:right;font-family:var(--mono)}
+.pf-cell:first-child{text-align:left}
+.pf-add{display:flex;gap:8px;align-items:center;padding:10px 14px;border-top:1px solid var(--brd);background:var(--surf)}
+.pf-add input{background:var(--card);border:1px solid var(--brd);border-radius:5px;padding:6px 10px;color:var(--txt);font-family:var(--mono);font-size:11px;outline:none;transition:border-color .15s}
+.pf-add input:focus{border-color:var(--teal)}
+.pf-add input::placeholder{color:var(--muted)}
+.alloc-bar{height:8px;border-radius:4px;background:var(--brd);overflow:hidden;margin-top:6px}
+.alloc-fill{height:100%;border-radius:4px;transition:width .4s ease}
+
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
 </style>
 </head>
@@ -194,6 +217,7 @@ body{background:var(--bg);color:var(--txt);font-family:var(--sans);height:100vh;
   <div class="hdr-right">
     <span id="lastUpdate"></span>
     <button class="refresh-btn" onclick="refreshAllQuotes()">↻ Actualiser</button>
+    <button class="refresh-btn" onclick="showPortfolio()" style="border-color:var(--amber);color:var(--amber)">💼 Portefeuille</button>
   </div>
 </div>
 
@@ -695,7 +719,7 @@ function renderPanel(s, q, d) {
   <div class="kpis">${kpisH}</div>
 
   <div class="atabs">
-    ${[['vue',"Vue d'ensemble"],['fin','Financiers'],['val','Valorisation'],['tech','Technique & Entrée']].map(([id,l],i)=>
+    ${[['vue',"Vue d'ensemble"],['fin','Financiers'],['val','Valorisation'],['tech','Technique & Entrée'],['jp','Juste Prix']].map(([id,l],i)=>
       `<button class="atab${i===0?' on':''}" onclick="swTab('${id}',this)">${l}</button>`).join('')}
   </div>
 
@@ -763,6 +787,76 @@ function renderPanel(s, q, d) {
           <div style="font-size:10px;font-weight:700;color:${r.warn?'var(--amber)':'var(--red)'};margin-bottom:3px">${r.title}</div>
           <div style="font-size:10px;color:var(--light);line-height:1.5">${r.text}</div>
         </div>`).join('')}
+      </div>
+    </div>
+  </div>
+
+  <div class="tc" id="tc-jp">
+    <div style="font-size:9px;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);padding-bottom:6px;border-bottom:1px solid var(--brd)">Valorisation — Juste Prix par les fondamentaux</div>
+    <div class="g2">
+      <div class="card">
+        <h4>Paramètres du modèle</h4>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div>
+            <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:5px">BNA (Bénéfice Net par Action)</div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <input id="jp-bna" type="number" step="0.01" placeholder="ex: 15.23" style="flex:1;background:var(--bg);border:1px solid var(--brd);border-radius:5px;padding:7px 10px;color:var(--txt);font-family:var(--mono);font-size:12px;outline:none" oninput="calcJP()">
+              <span style="font-size:10px;color:var(--muted);white-space:nowrap">€ ou $</span>
+            </div>
+          </div>
+          <div>
+            <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:5px">FCF par Action (Free Cash Flow)</div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <input id="jp-fcf" type="number" step="0.01" placeholder="ex: 18.50" style="flex:1;background:var(--bg);border:1px solid var(--brd);border-radius:5px;padding:7px 10px;color:var(--txt);font-family:var(--mono);font-size:12px;outline:none" oninput="calcJP()">
+              <span style="font-size:10px;color:var(--muted);white-space:nowrap">€ ou $</span>
+            </div>
+          </div>
+          <div style="height:1px;background:var(--brd)"></div>
+          <div>
+            <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:5px">PER cible (multiple de valorisation)</div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <input id="jp-per" type="number" step="0.5" value="15" style="flex:1;background:var(--bg);border:1px solid var(--brd);border-radius:5px;padding:7px 10px;color:var(--txt);font-family:var(--mono);font-size:12px;outline:none" oninput="calcJP()">
+              <span style="font-size:10px;color:var(--muted);white-space:nowrap">x</span>
+            </div>
+          </div>
+          <div>
+            <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:5px">P/FCF cible</div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <input id="jp-pfcf" type="number" step="0.5" value="18" style="flex:1;background:var(--bg);border:1px solid var(--brd);border-radius:5px;padding:7px 10px;color:var(--txt);font-family:var(--mono);font-size:12px;outline:none" oninput="calcJP()">
+              <span style="font-size:10px;color:var(--muted);white-space:nowrap">x</span>
+            </div>
+          </div>
+          <div>
+            <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:5px">Marge de sécurité souhaitée</div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <input id="jp-margin" type="number" step="1" value="20" min="0" max="50" style="flex:1;background:var(--bg);border:1px solid var(--brd);border-radius:5px;padding:7px 10px;color:var(--txt);font-family:var(--mono);font-size:12px;outline:none" oninput="calcJP()">
+              <span style="font-size:10px;color:var(--muted);white-space:nowrap">%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card" id="jp-result">
+        <h4>Résultat</h4>
+        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:80%;gap:8px;color:var(--muted);font-size:11px;text-align:center;padding:20px">
+          Renseigne le BNA et/ou le FCF/action pour calculer le juste prix.
+        </div>
+      </div>
+    </div>
+    <div class="card" style="margin-top:0">
+      <h4>Méthodologie</h4>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+        <div style="background:rgba(0,229,180,.04);border:1px solid rgba(0,229,180,.15);border-radius:6px;padding:10px">
+          <div style="font-size:10px;font-weight:700;color:var(--teal);margin-bottom:4px">Juste Prix BNA</div>
+          <div style="font-size:9px;color:var(--light);line-height:1.5">BNA × PER cible<br>Basé sur la capacité bénéficiaire normalisée de l'entreprise.</div>
+        </div>
+        <div style="background:rgba(79,142,255,.04);border:1px solid rgba(79,142,255,.15);border-radius:6px;padding:10px">
+          <div style="font-size:10px;font-weight:700;color:var(--blue);margin-bottom:4px">Juste Prix FCF</div>
+          <div style="font-size:9px;color:var(--light);line-height:1.5">FCF/action × P/FCF cible<br>Basé sur la génération de trésorerie réelle, moins manipulable.</div>
+        </div>
+        <div style="background:rgba(16,185,129,.04);border:1px solid rgba(16,185,129,.15);border-radius:6px;padding:10px">
+          <div style="font-size:10px;font-weight:700;color:var(--green);margin-bottom:4px">Juste Prix Combiné</div>
+          <div style="font-size:9px;color:var(--light);line-height:1.5">Moyenne pondérée BNA (40%) + FCF (60%)<br>Approche conservatrice privilegiant le cash.</div>
+        </div>
       </div>
     </div>
   </div>
@@ -893,6 +987,265 @@ async function confirmAdd() {
   updateCounts();
   showToast(`${t} ajouté ✓`);
   selectStock(newStock);
+}
+
+// ── JUSTE PRIX ────────────────────────────────────────────────
+function calcJP() {
+  const bna   = parseFloat(document.getElementById('jp-bna')?.value) || 0;
+  const fcf   = parseFloat(document.getElementById('jp-fcf')?.value) || 0;
+  const per   = parseFloat(document.getElementById('jp-per')?.value) || 15;
+  const pfcf  = parseFloat(document.getElementById('jp-pfcf')?.value) || 18;
+  const marge = parseFloat(document.getElementById('jp-margin')?.value) || 20;
+  const res   = document.getElementById('jp-result');
+  if (!res) return;
+
+  if (!bna && !fcf) {
+    res.innerHTML = '<h4>Résultat</h4><div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:80%;gap:8px;color:var(--muted);font-size:11px;text-align:center;padding:20px">Renseigne le BNA et/ou le FCF/action pour calculer le juste prix.</div>';
+    return;
+  }
+
+  const q = curStock ? (quotes[curStock.t] || {}) : {};
+  const prixActuel = q.priceRaw || 0;
+  const sym = q.currency === 'EUR' ? '€' : '$';
+  const fmt = v => v > 0 ? `${sym}${v.toFixed(2)}` : '—';
+
+  const jpBNA  = bna  > 0 ? bna  * per  : 0;
+  const jpFCF  = fcf  > 0 ? fcf  * pfcf : 0;
+
+  // Weighted average: FCF 60% BNA 40% if both available
+  let jpCombine = 0;
+  if (jpBNA > 0 && jpFCF > 0)      jpCombine = jpBNA * 0.4 + jpFCF * 0.6;
+  else if (jpBNA > 0)               jpCombine = jpBNA;
+  else if (jpFCF > 0)               jpCombine = jpFCF;
+
+  const jpSecurite = jpCombine * (1 - marge / 100);
+
+  const upside = prixActuel > 0 && jpCombine > 0
+    ? ((jpCombine - prixActuel) / prixActuel * 100).toFixed(1)
+    : null;
+  const upsideSec = prixActuel > 0 && jpSecurite > 0
+    ? ((jpSecurite - prixActuel) / prixActuel * 100).toFixed(1)
+    : null;
+
+  const verdict = jpCombine > 0 && prixActuel > 0
+    ? prixActuel <= jpSecurite
+      ? { txt: '✅ Sous-évalué — Zone d\'achat', c: 'var(--green)' }
+      : prixActuel <= jpCombine
+        ? { txt: '🟡 Légèrement sous le juste prix', c: 'var(--amber)' }
+        : { txt: '🔴 Au-dessus du juste prix', c: 'var(--red)' }
+    : null;
+
+  res.innerHTML = `<h4>Résultat — ${curStock?.t || ''}</h4>
+  <div style="display:flex;flex-direction:column;gap:10px">
+    ${jpBNA > 0 ? `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:rgba(0,229,180,.05);border:1px solid rgba(0,229,180,.2);border-radius:6px">
+      <div>
+        <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px">Juste Prix BNA</div>
+        <div style="font-size:9px;color:var(--light);margin-top:2px">${bna} × ${per}x PER</div>
+      </div>
+      <div style="font-size:20px;font-weight:700;color:var(--teal);font-family:var(--mono)">${fmt(jpBNA)}</div>
+    </div>` : ''}
+    ${jpFCF > 0 ? `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:rgba(79,142,255,.05);border:1px solid rgba(79,142,255,.2);border-radius:6px">
+      <div>
+        <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px">Juste Prix FCF</div>
+        <div style="font-size:9px;color:var(--light);margin-top:2px">${fcf} × ${pfcf}x P/FCF</div>
+      </div>
+      <div style="font-size:20px;font-weight:700;color:var(--blue);font-family:var(--mono)">${fmt(jpFCF)}</div>
+    </div>` : ''}
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 14px;background:rgba(16,185,129,.07);border:1px solid rgba(16,185,129,.3);border-radius:7px">
+      <div>
+        <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px">Juste Prix Combiné</div>
+        <div style="font-size:9px;color:var(--light);margin-top:2px">${jpBNA > 0 && jpFCF > 0 ? 'BNA×40% + FCF×60%' : 'Modèle unique'}</div>
+        ${upside !== null ? `<div style="font-size:10px;color:${parseFloat(upside)>=0?'var(--green)':'var(--red)'};margin-top:3px;font-weight:700">${parseFloat(upside)>=0?'+':''}${upside}% vs cours actuel</div>` : ''}
+      </div>
+      <div style="font-size:24px;font-weight:700;color:var(--green);font-family:var(--mono)">${fmt(jpCombine)}</div>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:rgba(251,191,36,.05);border:1px solid rgba(251,191,36,.2);border-radius:6px">
+      <div>
+        <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px">Prix avec marge de sécurité (${marge}%)</div>
+        ${upsideSec !== null ? `<div style="font-size:10px;color:${parseFloat(upsideSec)>=0?'var(--green)':'var(--red)'};margin-top:3px;font-weight:700">${parseFloat(upsideSec)>=0?'+':''}${upsideSec}% vs cours actuel</div>` : ''}
+      </div>
+      <div style="font-size:20px;font-weight:700;color:var(--amber);font-family:var(--mono)">${fmt(jpSecurite)}</div>
+    </div>
+    ${verdict ? `<div style="text-align:center;padding:8px;font-size:11px;font-weight:700;color:${verdict.c}">${verdict.txt}</div>` : ''}
+    ${prixActuel > 0 ? `<div style="font-size:9px;color:var(--muted);text-align:center">Cours actuel : <b style="color:white;font-family:var(--mono)">${fmt(prixActuel)}</b></div>` : ''}
+  </div>`;
+}
+
+// ── PORTFOLIO ─────────────────────────────────────────────────
+let portfolio = JSON.parse(localStorage.getItem('pf_positions') || '[]');
+// Note: using localStorage for portfolio as it's personal per user
+
+function savePortfolio() {
+  localStorage.setItem('pf_positions', JSON.stringify(portfolio));
+}
+
+function showPortfolio() {
+  document.getElementById('welcomeScreen').style.display = 'none';
+  const ap = document.getElementById('analysisPanel');
+  ap.style.display = 'block';
+  curStock = null;
+  buildList();
+  renderPortfolio();
+}
+
+async function renderPortfolio() {
+  const ap = document.getElementById('analysisPanel');
+
+  // Fetch all quotes for portfolio positions
+  await Promise.allSettled(portfolio.map(p => fetchQuote(p.ticker)));
+
+  // Calculate metrics
+  let totalInvest = 0, totalValue = 0;
+  const rows = portfolio.map(p => {
+    const q = quotes[p.ticker] || {};
+    const prixActuel = q.priceRaw || 0;
+    const valeur = prixActuel * p.qty;
+    const invest = p.pru * p.qty;
+    const plVal  = valeur - invest;
+    const plPct  = invest > 0 ? (plVal / invest * 100) : 0;
+    totalInvest += invest;
+    totalValue  += valeur;
+    return { ...p, q, prixActuel, valeur, invest, plVal, plPct };
+  });
+
+  const totalPL    = totalValue - totalInvest;
+  const totalPLPct = totalInvest > 0 ? (totalPL / totalInvest * 100) : 0;
+
+  const COLORS = ['#00e5b4','#4f8eff','#fbbf24','#10b981','#a78bfa','#f43f5e','#fb923c','#38bdf8'];
+
+  ap.innerHTML = `<div class="pf-screen">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <div style="font-size:14px;font-weight:700;color:white">💼 Mon Portefeuille</div>
+      <div style="font-size:9px;color:var(--muted);font-family:var(--mono)">Cours Yahoo Finance · différé 15min</div>
+    </div>
+
+    <div class="pf-summary">
+      <div class="pf-kpi" style="border-left:3px solid var(--teal)">
+        <div class="pf-kpi-l">Valeur totale</div>
+        <div class="pf-kpi-v" style="color:var(--teal)">${totalValue > 0 ? '$' + totalValue.toLocaleString('fr-FR', {minimumFractionDigits:0,maximumFractionDigits:0}) : '—'}</div>
+        <div class="pf-kpi-s">Investi : ${totalInvest > 0 ? '$' + totalInvest.toLocaleString('fr-FR', {minimumFractionDigits:0,maximumFractionDigits:0}) : '—'}</div>
+      </div>
+      <div class="pf-kpi" style="border-left:3px solid ${totalPL >= 0 ? 'var(--green)' : 'var(--red)'}">
+        <div class="pf-kpi-l">P&L total</div>
+        <div class="pf-kpi-v" style="color:${totalPL >= 0 ? 'var(--green)' : 'var(--red)'}">${totalPL >= 0 ? '+' : ''}${totalPL.toLocaleString('fr-FR', {minimumFractionDigits:0,maximumFractionDigits:0})}</div>
+        <div class="pf-kpi-s" style="color:${totalPLPct >= 0 ? 'var(--green)' : 'var(--red)'}">${totalPLPct >= 0 ? '+' : ''}${totalPLPct.toFixed(2)}%</div>
+      </div>
+      <div class="pf-kpi" style="border-left:3px solid var(--blue)">
+        <div class="pf-kpi-l">Positions</div>
+        <div class="pf-kpi-v" style="color:var(--blue)">${portfolio.length}</div>
+        <div class="pf-kpi-s">${rows.filter(r=>r.plPct>=0).length} en gain · ${rows.filter(r=>r.plPct<0).length} en perte</div>
+      </div>
+      <div class="pf-kpi" style="border-left:3px solid var(--amber)">
+        <div class="pf-kpi-l">Meilleure perf.</div>
+        ${rows.length > 0 ? (() => {
+          const best = rows.reduce((a,b) => b.plPct > a.plPct ? b : a, rows[0]);
+          return `<div class="pf-kpi-v" style="color:var(--amber)">${best.ticker}</div>
+          <div class="pf-kpi-s" style="color:var(--green)">+${best.plPct.toFixed(2)}%</div>`;
+        })() : '<div class="pf-kpi-v" style="color:var(--muted)">—</div>'}
+      </div>
+    </div>
+
+    ${rows.length > 0 ? `
+    <div class="pf-table">
+      <div class="pf-thead">
+        <div class="pf-th" style="text-align:left">Action</div>
+        <div class="pf-th">Qté</div>
+        <div class="pf-th">PRU</div>
+        <div class="pf-th">Cours</div>
+        <div class="pf-th">Investi</div>
+        <div class="pf-th">Valeur</div>
+        <div class="pf-th">P&L</div>
+        <div class="pf-th"></div>
+      </div>
+      ${rows.map((r,i) => `
+      <div class="pf-row">
+        <div class="pf-cell" style="text-align:left">
+          <div style="display:flex;align-items:center;gap:8px">
+            <div style="width:24px;height:24px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;background:${COLORS[i%COLORS.length]}22;color:${COLORS[i%COLORS.length]};font-family:var(--mono);flex-shrink:0">${r.ticker.substring(0,3)}</div>
+            <div>
+              <div style="font-size:11px;font-weight:700;color:white">${r.ticker}</div>
+              <div style="font-size:9px;color:var(--muted)">${r.q?.name||''}</div>
+            </div>
+          </div>
+        </div>
+        <div class="pf-cell">${r.qty}</div>
+        <div class="pf-cell">${r.pru.toFixed(2)}</div>
+        <div class="pf-cell" style="color:${r.q?.pos?'var(--green)':'var(--red)'}">${r.prixActuel > 0 ? r.prixActuel.toFixed(2) : '—'}</div>
+        <div class="pf-cell">${r.invest.toLocaleString('fr-FR',{maximumFractionDigits:0})}</div>
+        <div class="pf-cell" style="color:var(--teal)">${r.valeur > 0 ? r.valeur.toLocaleString('fr-FR',{maximumFractionDigits:0}) : '—'}</div>
+        <div class="pf-cell">
+          <div style="color:${r.plPct>=0?'var(--green)':'var(--red)'};font-weight:700">${r.plPct>=0?'+':''}${r.plPct.toFixed(2)}%</div>
+          <div style="font-size:9px;color:${r.plVal>=0?'var(--green)':'var(--red)'}">${r.plVal>=0?'+':''}${r.plVal.toLocaleString('fr-FR',{maximumFractionDigits:0})}</div>
+        </div>
+        <div class="pf-cell"><button onclick="removePosition('${r.ticker}')" style="background:rgba(244,63,94,.1);border:1px solid rgba(244,63,94,.3);color:var(--red);border-radius:4px;padding:3px 8px;cursor:pointer;font-size:10px">✕</button></div>
+      </div>`).join('')}
+    </div>
+
+    <div class="g2">
+      <div class="card">
+        <h4>Allocation du portefeuille</h4>
+        ${totalValue > 0 ? rows.map((r,i) => {
+          const pct = (r.valeur / totalValue * 100);
+          return `<div style="margin-bottom:8px">
+            <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+              <span style="font-size:10px;color:var(--light)">${r.ticker}</span>
+              <span style="font-size:10px;font-family:var(--mono);color:${COLORS[i%COLORS.length]}">${pct.toFixed(1)}%</span>
+            </div>
+            <div class="alloc-bar"><div class="alloc-fill" style="width:${pct}%;background:${COLORS[i%COLORS.length]}"></div></div>
+          </div>`;
+        }).join('') : '<div style="color:var(--muted);font-size:11px">Aucune position</div>'}
+      </div>
+      <div class="card">
+        <h4>Performance par position</h4>
+        ${rows.sort((a,b)=>b.plPct-a.plPct).map(r => `
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 8px;margin-bottom:4px;background:rgba(255,255,255,.02);border-radius:4px;border:1px solid var(--brd)">
+            <span style="font-size:10px;font-family:var(--mono);color:white">${r.ticker}</span>
+            <span style="font-size:11px;font-weight:700;color:${r.plPct>=0?'var(--green)':'var(--red)'}">${r.plPct>=0?'+':''}${r.plPct.toFixed(2)}%</span>
+          </div>`).join('')}
+      </div>
+    </div>
+    ` : `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;gap:10px;color:var(--muted)">
+      <div style="font-size:32px">📭</div>
+      <div style="font-size:13px">Aucune position pour l'instant</div>
+      <div style="font-size:11px">Ajoute ta première position ci-dessous</div>
+    </div>`}
+
+    <div class="card">
+      <h4>Ajouter une position</h4>
+      <div class="pf-add">
+        <input id="pf-ticker" placeholder="Ticker (ex: AAPL)" style="width:120px;text-transform:uppercase">
+        <input id="pf-qty" type="number" placeholder="Quantité" style="width:100px" min="0" step="1">
+        <input id="pf-pru" type="number" placeholder="PRU (prix moyen)" style="width:150px" min="0" step="0.01">
+        <button onclick="addPosition()" class="btn btn-p" style="padding:6px 14px">Ajouter →</button>
+      </div>
+    </div>
+
+    <div class="disc">Données de cours Yahoo Finance · Différé 15min · Ne constitue pas un conseil en investissement</div>
+  </div>`;
+}
+
+function addPosition() {
+  const ticker = document.getElementById('pf-ticker')?.value.trim().toUpperCase();
+  const qty    = parseFloat(document.getElementById('pf-qty')?.value);
+  const pru    = parseFloat(document.getElementById('pf-pru')?.value);
+  if (!ticker || !qty || !pru) { showToast('Remplis tous les champs'); return; }
+  if (portfolio.find(p => p.ticker === ticker)) {
+    // Update existing
+    const idx = portfolio.findIndex(p => p.ticker === ticker);
+    portfolio[idx] = { ticker, qty, pru };
+    showToast(`${ticker} mis à jour ✓`);
+  } else {
+    portfolio.push({ ticker, qty, pru });
+    showToast(`${ticker} ajouté au portefeuille ✓`);
+  }
+  savePortfolio();
+  renderPortfolio();
+}
+
+function removePosition(ticker) {
+  portfolio = portfolio.filter(p => p.ticker !== ticker);
+  savePortfolio();
+  renderPortfolio();
 }
 
 // ── TOAST ─────────────────────────────────────────────────────
