@@ -646,9 +646,11 @@ async function fetchQuote(ticker) {
   try {
     const r = await fetch(`/api/quote?ticker=${encodeURIComponent(ticker)}`);
     const d = await r.json();
+    if (d.error) console.warn(`[quote] ${ticker} error:`, d.error);
+    if (!d.priceRaw || d.priceRaw === 0) console.warn(`[quote] ${ticker} priceRaw=0, raw response:`, d);
     quotes[ticker] = d;
     return d;
-  } catch(e) { return null; }
+  } catch(e) { console.error(`[quote] ${ticker} fetch failed:`, e); return null; }
 }
 async function fetchHistory(ticker, range) {
   try {
@@ -2018,8 +2020,9 @@ async function renderPortfolio() {
 
   const rows = portfolio.map((p,i) => {
     const q = quotes[p.ticker]||{};
-    const prixActuel = q.priceRaw || parseFloat((q.price||"0").replace(/[^\d.]/g,"")) || 0;
-    const sym = q.currency==='EUR' ? '€' : '$';
+    const prixActuel = q.priceRaw || parseFloat((q.price||"0").replace(/[^\d.,]/g,"").replace(",",".")) || 0;
+    const isEurTicker = /\.(PA|AS|BR|DE|MI|MC|EPA|EBR|F|L)$/.test(p.ticker);
+    const sym = (q.currency==='EUR' || isEurTicker) ? '€' : '$';
     const valeur = prixActuel*p.qty;
     const invest = p.pru*p.qty;
     const plVal  = valeur-invest;
