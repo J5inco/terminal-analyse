@@ -1015,9 +1015,103 @@ function renderPanel(s, q, d) {
   </div>
 
   <div class="tc" id="tc-val">
+
+    <!-- SCORE + POSITIONNEMENT -->
+    <div class="g2">
+      <div class="gcard">
+        <h4>Score de valorisation</h4>
+        <div style="display:flex;align-items:center;gap:16px;margin-bottom:12px">
+          <div style="position:relative;width:90px;height:90px;flex-shrink:0">
+            <canvas id="ch-score" width="90" height="90"></canvas>
+            <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">
+              <div id="val-score-num" style="font-size:26px;font-weight:700;font-family:var(--mono);color:var(--white)">—</div>
+              <div style="font-size:8px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">/10</div>
+            </div>
+          </div>
+          <div style="flex:1">
+            <div id="val-score-label" style="font-size:13px;font-weight:700;margin-bottom:6px;color:var(--white)">—</div>
+            <div id="val-score-desc" style="font-size:10px;color:var(--light);line-height:1.6">—</div>
+          </div>
+        </div>
+        <div id="val-lights" style="display:flex;flex-direction:column;gap:5px"></div>
+      </div>
+      <div class="gcard">
+        <h4>Positionnement vs médiane sectorielle</h4>
+        <div id="val-position" style="display:flex;flex-direction:column;gap:7px;margin-bottom:12px"></div>
+        <div style="background:rgba(59,130,246,.06);border:1px solid rgba(96,165,250,.2);border-radius:10px;padding:12px;margin-top:8px">
+          <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">Rendement total attendu (5 ans annualisé)</div>
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <div style="font-size:10px;color:var(--light)">Croissance BNA + Dividende</div>
+              <div style="font-size:9px;color:var(--muted);margin-top:2px" id="val-rendement-detail">—</div>
+            </div>
+            <div id="val-rendement-total" style="font-size:24px;font-weight:700;font-family:var(--mono);color:var(--green)">—</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- GRAPHIQUES COMPARATIFS -->
     <div class="g2">
       <div class="gcard"><h4>P/E vs comparables sectoriels</h4>
-        ${d.peers?.labels?.length ? `<div style="position:relative;height:220px"><canvas id="ch-pe"></canvas></div>` : `<div style="height:180px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:11px">Données comparables non disponibles dans l'analyse IA</div>`}
+        ${d.peers?.labels?.length ? `<div style="position:relative;height:220px"><canvas id="ch-pe"></canvas></div>` : `<div style="height:180px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:11px">Données non disponibles</div>`}
+      </div>
+      <div class="gcard"><h4>EV/EBITDA vs comparables sectoriels</h4>
+        ${d.peersEv?.labels?.length ? `<div style="position:relative;height:220px"><canvas id="ch-ev"></canvas></div>` : `<div style="height:180px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:11px">Données non disponibles</div>`}
+      </div>
+    </div>
+
+    <div class="g2">
+      <div class="gcard"><h4>PER historique 5 ans</h4>
+        ${d.perHistory?.labels?.length ? `<div style="position:relative;height:220px"><canvas id="ch-per-hist"></canvas></div>` : `<div style="height:180px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:11px">Données non disponibles</div>`}
+      </div>
+      <div class="gcard"><h4>FCF Yield historique</h4>
+        ${d.fcfYieldHistory?.labels?.length ? `<div style="position:relative;height:220px"><canvas id="ch-fcf-yield"></canvas></div>` : `<div style="height:180px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:11px">Données non disponibles</div>`}
+      </div>
+    </div>
+
+    <!-- DCF + MÉTRIQUES -->
+    <div class="g2">
+      <div class="gcard">
+        <h4>DCF Simplifié — Valeur intrinsèque</h4>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div class="jp-input-row">
+            <div style="flex:1">
+              <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;margin-bottom:4px">FCF par action</div>
+              <input id="dcf-fcf" type="number" step="0.01" placeholder="ex: 18.50" oninput="calcDCF()">
+            </div>
+            <div style="text-align:right;flex-shrink:0" id="dcf-fcf-hint"></div>
+          </div>
+          <div class="jp-input-row">
+            <div style="flex:1">
+              <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;margin-bottom:4px">Croissance FCF (%/an, 5 ans)</div>
+              <input id="dcf-g" type="number" step="0.5" value="8" oninput="calcDCF()">
+            </div>
+            <div style="font-size:9px;color:var(--muted)">%/an</div>
+          </div>
+          <div class="jp-input-row">
+            <div style="flex:1">
+              <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;margin-bottom:4px">Croissance terminale (%/an)</div>
+              <input id="dcf-gt" type="number" step="0.5" value="2.5" oninput="calcDCF()">
+            </div>
+            <div style="font-size:9px;color:var(--muted)">%/an</div>
+          </div>
+          <div class="jp-input-row">
+            <div style="flex:1">
+              <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;margin-bottom:4px">Taux d'actualisation (WACC)</div>
+              <input id="dcf-r" type="number" step="0.5" value="9" oninput="calcDCF()">
+            </div>
+            <div style="font-size:9px;color:var(--muted)">%</div>
+          </div>
+          <div class="jp-input-row">
+            <div style="flex:1">
+              <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;margin-bottom:4px">Marge de sécurité</div>
+              <input id="dcf-ms" type="number" step="1" value="25" min="0" max="50" oninput="calcDCF()">
+            </div>
+            <div style="font-size:9px;color:var(--muted)">%</div>
+          </div>
+        </div>
+        <div id="dcf-result" style="margin-top:12px"></div>
       </div>
       <div class="gcard"><h4>Métriques de valorisation</h4>
         <div style="display:flex;flex-direction:column;gap:5px">
@@ -1168,6 +1262,7 @@ function renderPanel(s, q, d) {
 
   setTimeout(() => {
     drawCharts(d);
+    drawValCharts(d, q);
     loadChart('1y', document.querySelector('#range-btns .chip.on'));
     loadNewsPanel(s.t);
     loadPerfData(s.t);
@@ -1180,7 +1275,7 @@ function swTab(id, btn) {
   document.querySelectorAll('.tc').forEach(c=>c.classList.remove('on'));
   btn.classList.add('on');
   document.getElementById('tc-'+id).classList.add('on');
-  setTimeout(()=>{ if(curStock) drawCharts(analysisCache[curStock.t]); }, 50);
+  setTimeout(()=>{ if(curStock) { const d=analysisCache[curStock.t]; const q=quotes[curStock.t]||{}; drawCharts(d); if(id==='val') drawValCharts(d,q); } }, 50);
 }
 
 // ── CHARTS ────────────────────────────────────────────────────
@@ -1450,6 +1545,215 @@ async function loadNewsPanel(ticker) {
       </div>
     </a>`;
   }).join('');
+}
+
+
+// ── VALORISATION — SCORE, DCF, FEUX TRICOLORES ───────────────
+
+function drawValCharts(d, q) {
+  if (!d || !q) return;
+  const gridColor = 'rgba(255,255,255,.06)';
+  const sym = q.currency==='EUR'?'€':'$';
+
+  // ── EV/EBITDA comparables
+  kc('ch-ev');
+  if (d.peersEv?.labels?.length && d.peersEv?.data?.length && document.getElementById('ch-ev')) {
+    const displayT = curStock?.t.replace('.PA','').replace('-','.');
+    const colors = d.peersEv.labels.map(l=>l===displayT?'rgba(6,182,212,.9)':'rgba(96,165,250,.5)');
+    charts['ch-ev'] = new Chart(document.getElementById('ch-ev'), {
+      type:'bar',
+      data:{labels:d.peersEv.labels, datasets:[{data:d.peersEv.data, backgroundColor:colors, borderColor:colors.map(c=>c.replace('.9','1').replace('.5','1')), borderWidth:1, borderRadius:5}]},
+      options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}, tooltip:{callbacks:{label:ctx=>`EV/EBITDA : ${ctx.raw?.toFixed(1)}x`}}},
+        scales:{x:{grid:{color:gridColor},ticks:{color:'rgba(255,255,255,.3)',font:{size:9}}},y:{grid:{color:gridColor},ticks:{color:'rgba(255,255,255,.3)',font:{size:9},callback:v=>v+'x'}}}
+      }
+    });
+  }
+
+  // ── PER historique
+  kc('ch-per-hist');
+  if (d.perHistory?.labels?.length && d.perHistory?.data?.length && document.getElementById('ch-per-hist')) {
+    const avg = d.perHistory.data.reduce((a,b)=>a+b,0)/d.perHistory.data.length;
+    charts['ch-per-hist'] = new Chart(document.getElementById('ch-per-hist'), {
+      type:'line',
+      data:{labels:d.perHistory.labels, datasets:[
+        {data:d.perHistory.data, label:'P/E', borderColor:'rgba(96,165,250,.9)', backgroundColor:'rgba(96,165,250,.08)', borderWidth:2, fill:true, pointRadius:3, tension:0.3},
+        {data:d.perHistory.labels.map(()=>avg), label:'Moyenne', borderColor:'rgba(251,191,36,.6)', backgroundColor:'transparent', borderWidth:1, borderDash:[4,4], pointRadius:0}
+      ]},
+      options:{responsive:true, maintainAspectRatio:false,
+        plugins:{legend:{display:true,position:'bottom',labels:{boxWidth:8,padding:10,color:'rgba(255,255,255,.4)'}}, tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label} : ${ctx.raw?.toFixed(1)}x`}}},
+        scales:{x:{grid:{color:gridColor},ticks:{color:'rgba(255,255,255,.3)',font:{size:9}}},y:{grid:{color:gridColor},ticks:{color:'rgba(255,255,255,.3)',font:{size:9},callback:v=>v+'x'}}}
+      }
+    });
+  }
+
+  // ── FCF Yield historique
+  kc('ch-fcf-yield');
+  if (d.fcfYieldHistory?.labels?.length && d.fcfYieldHistory?.data?.length && document.getElementById('ch-fcf-yield')) {
+    charts['ch-fcf-yield'] = new Chart(document.getElementById('ch-fcf-yield'), {
+      type:'line',
+      data:{labels:d.fcfYieldHistory.labels, datasets:[{
+        data:d.fcfYieldHistory.data, label:'FCF Yield %',
+        borderColor:'rgba(74,222,128,.9)', backgroundColor:'rgba(74,222,128,.08)',
+        borderWidth:2, fill:true, pointRadius:3, tension:0.3
+      }]},
+      options:{responsive:true, maintainAspectRatio:false,
+        plugins:{legend:{display:false}, tooltip:{callbacks:{label:ctx=>`FCF Yield : ${ctx.raw?.toFixed(1)}%`}}},
+        scales:{x:{grid:{color:gridColor},ticks:{color:'rgba(255,255,255,.3)',font:{size:9}}},y:{grid:{color:gridColor},ticks:{color:'rgba(255,255,255,.3)',font:{size:9},callback:v=>v+'%'}}}
+      }
+    });
+  }
+
+  // ── Score de valorisation (jauge)
+  const scoreEl = document.getElementById('val-score-num');
+  const labelEl = document.getElementById('val-score-label');
+  const descEl  = document.getElementById('val-score-desc');
+  const lightsEl = document.getElementById('val-lights');
+  const posEl   = document.getElementById('val-position');
+
+  if (d.valScore != null && scoreEl) {
+    const score = d.valScore; // 1-10
+    const scoreColor = score>=7?'#4ade80':score>=4?'#fbbf24':'#f87171';
+    const scoreLabel = score>=7?'🟢 Sous-évalué':score>=4?'🟡 Juste prix':'🔴 Surévalué';
+    const scoreDesc  = score>=7?'Les multiples suggèrent une décote significative vs pairs et historique.':score>=4?'Valorisation en ligne avec les comparables sectoriels.':'Action cotant avec une prime élevée vs pairs et historique.';
+
+    scoreEl.textContent = score;
+    scoreEl.style.color = scoreColor;
+    if(labelEl) { labelEl.textContent = scoreLabel; labelEl.style.color = scoreColor; }
+    if(descEl)  descEl.textContent = scoreDesc;
+
+    // Jauge doughnut
+    kc('ch-score');
+    const scoreCanvas = document.getElementById('ch-score');
+    if (scoreCanvas) {
+      charts['ch-score'] = new Chart(scoreCanvas, {
+        type:'doughnut',
+        data:{datasets:[{data:[score, 10-score], backgroundColor:[scoreColor,'rgba(255,255,255,.06)'], borderWidth:0, circumference:270, rotation:225}]},
+        options:{responsive:false, cutout:'75%', plugins:{legend:{display:false},tooltip:{enabled:false}}}
+      });
+    }
+  }
+
+  // Feux tricolores par multiple
+  if (lightsEl && d.valLights?.length) {
+    lightsEl.innerHTML = d.valLights.map(l=>{
+      const color = l.signal==='green'?'var(--green)':l.signal==='amber'?'var(--amber)':'var(--red)';
+      const emoji = l.signal==='green'?'🟢':l.signal==='amber'?'🟡':'🔴';
+      return `<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 10px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.06);border-radius:7px">
+        <span style="font-size:10px;color:rgba(255,255,255,.6)">${l.label}</span>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-family:'DM Mono',monospace;font-size:10px;font-weight:600;color:${color}">${l.val}</span>
+          <span style="font-size:11px">${emoji}</span>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  // Positionnement vs médiane
+  if (posEl && d.valPosition?.length) {
+    posEl.innerHTML = d.valPosition.map(p=>{
+      const arrow = p.vs==='cheaper'?'↓ Moins cher':p.vs==='parity'?'= Médiane':'↑ Plus cher';
+      const color = p.vs==='cheaper'?'var(--green)':p.vs==='parity'?'var(--amber)':'var(--red)';
+      const pct = p.pct || 0;
+      const barPct = Math.min(Math.abs(pct), 100);
+      return `<div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+          <span style="font-size:10px;color:rgba(255,255,255,.6)">${p.label}</span>
+          <span style="font-size:10px;font-weight:700;font-family:'DM Mono',monospace;color:${color}">${arrow} ${pct>0?'+':''}${pct}%</span>
+        </div>
+        <div style="height:4px;background:rgba(255,255,255,.06);border-radius:2px">
+          <div style="height:4px;width:${barPct}%;background:${color};border-radius:2px;transition:width .4s ease"></div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  // Rendement total attendu
+  if (d.expectedReturn != null) {
+    const retEl = document.getElementById('val-rendement-total');
+    const detEl = document.getElementById('val-rendement-detail');
+    if (retEl) {
+      retEl.textContent = `${d.expectedReturn>=0?'+':''}${d.expectedReturn}%/an`;
+      retEl.style.color = d.expectedReturn>=8?'var(--green)':d.expectedReturn>=4?'var(--amber)':'var(--red)';
+    }
+    if (detEl && d.expectedReturnDetail) detEl.textContent = d.expectedReturnDetail;
+  }
+
+  // Pre-fill DCF avec FCF Yahoo
+  const dcfFcf = document.getElementById('dcf-fcf');
+  const dcfHint = document.getElementById('dcf-fcf-hint');
+  if (dcfFcf && q.fcfPerShare != null) {
+    const sym2 = q.currency==='EUR'?'€':'$';
+    dcfFcf.value = q.fcfPerShare.toFixed(2);
+    if (dcfHint) dcfHint.innerHTML = `<div style="font-size:8px;color:var(--muted);margin-bottom:2px">Yahoo</div><div style="font-family:'DM Mono',monospace;font-size:12px;font-weight:600;color:var(--teal)">${sym2}${q.fcfPerShare.toFixed(2)}</div>`;
+    calcDCF();
+  }
+}
+
+function calcDCF() {
+  const fcf  = parseFloat(document.getElementById('dcf-fcf')?.value) || 0;
+  const g    = (parseFloat(document.getElementById('dcf-g')?.value) || 8) / 100;
+  const gt   = (parseFloat(document.getElementById('dcf-gt')?.value) || 2.5) / 100;
+  const r    = (parseFloat(document.getElementById('dcf-r')?.value) || 9) / 100;
+  const ms   = (parseFloat(document.getElementById('dcf-ms')?.value) || 25) / 100;
+  const res  = document.getElementById('dcf-result');
+  if (!res || !fcf || r <= gt) return;
+
+  const q = curStock ? (quotes[curStock.t]||{}) : {};
+  const sym = q.currency==='EUR'?'€':'$';
+  const prixActuel = q.priceRaw || parseFloat((q.price||'0').replace(/[^\d.]/g,'')) || 0;
+
+  // DCF à 5 ans + valeur terminale
+  let pv = 0;
+  for (let i = 1; i <= 5; i++) {
+    pv += (fcf * Math.pow(1+g, i)) / Math.pow(1+r, i);
+  }
+  const fcf5 = fcf * Math.pow(1+g, 5);
+  const terminalValue = (fcf5 * (1+gt)) / (r - gt);
+  const pvTerminal = terminalValue / Math.pow(1+r, 5);
+  const intrinsic = pv + pvTerminal;
+  const intrinsicSafe = intrinsic * (1 - ms);
+  const upside = prixActuel > 0 ? ((intrinsic - prixActuel) / prixActuel * 100).toFixed(1) : null;
+  const upsideSafe = prixActuel > 0 ? ((intrinsicSafe - prixActuel) / prixActuel * 100).toFixed(1) : null;
+
+  const verdict = intrinsic > 0 && prixActuel > 0
+    ? prixActuel <= intrinsicSafe ? {txt:'✅ Sous-évalué — Zone d\'achat', c:'var(--green)'}
+    : prixActuel <= intrinsic     ? {txt:'🟡 Proche de la valeur intrinsèque', c:'var(--amber)'}
+    : {txt:'🔴 Au-dessus de la valeur intrinsèque', c:'var(--red)'} : null;
+
+  res.innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:7px">
+      <div style="padding:11px 13px;border-radius:10px;background:rgba(59,130,246,.05);border:1px solid rgba(96,165,250,.2)">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="font-size:9px;color:var(--muted);text-transform:uppercase;margin-bottom:2px">Valeur intrinsèque DCF</div>
+            <div style="font-size:9px;color:rgba(255,255,255,.4)">PV flux (5A) + Valeur terminale</div>
+            ${upside!=null?`<div style="font-size:10px;font-weight:700;color:${parseFloat(upside)>=0?'var(--green)':'var(--red)'};margin-top:3px">${parseFloat(upside)>=0?'+':''}${upside}% vs cours actuel</div>`:''}
+          </div>
+          <div style="font-size:22px;font-weight:700;font-family:'DM Mono',monospace;color:var(--blue2)">${sym}${intrinsic.toFixed(2)}</div>
+        </div>
+      </div>
+      <div style="padding:11px 13px;border-radius:10px;background:rgba(251,191,36,.04);border:1px solid rgba(251,191,36,.2)">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="font-size:9px;color:var(--muted);text-transform:uppercase;margin-bottom:2px">Prix avec marge de sécurité (${(ms*100).toFixed(0)}%)</div>
+            ${upsideSafe!=null?`<div style="font-size:10px;font-weight:700;color:${parseFloat(upsideSafe)>=0?'var(--green)':'var(--red)'};margin-top:3px">${parseFloat(upsideSafe)>=0?'+':''}${upsideSafe}% vs cours actuel</div>`:''}
+          </div>
+          <div style="font-size:20px;font-weight:700;font-family:'DM Mono',monospace;color:var(--amber)">${sym}${intrinsicSafe.toFixed(2)}</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:9px">
+        <div style="padding:7px 10px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.06);border-radius:7px">
+          <div style="color:var(--muted);margin-bottom:2px">PV flux 5 ans</div>
+          <div style="font-family:'DM Mono',monospace;font-weight:600;color:rgba(255,255,255,.8)">${sym}${pv.toFixed(2)}</div>
+        </div>
+        <div style="padding:7px 10px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.06);border-radius:7px">
+          <div style="color:var(--muted);margin-bottom:2px">PV Valeur terminale</div>
+          <div style="font-family:'DM Mono',monospace;font-weight:600;color:rgba(255,255,255,.8)">${sym}${pvTerminal.toFixed(2)}</div>
+        </div>
+      </div>
+      ${verdict?`<div style="text-align:center;padding:8px;font-size:12px;font-weight:700;color:${verdict.c}">${verdict.txt}</div>`:''}
+      ${prixActuel>0?`<div style="font-size:9px;color:var(--muted);text-align:center">Cours actuel : <b style="color:var(--white);font-family:'DM Mono',monospace">${sym}${prixActuel.toFixed(2)}</b></div>`:''}
+    </div>`;
 }
 
 // ── JUSTE PRIX ────────────────────────────────────────────────
