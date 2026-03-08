@@ -394,6 +394,7 @@ body::after{content:'';position:fixed;width:500px;height:500px;border-radius:50%
   <div class="topbar-right">
     <span id="lastUpdate"></span>
     <button class="tbtn" onclick="refreshAllQuotes()">↻ Actualiser</button>
+    <button class="tbtn" id="authBtn" onclick="openAuthModal()">🔑 Connexion</button>
     <button class="tbtn tbtn-pf" onclick="showPortfolio()">💼 Portefeuille</button>
   </div>
 </div>
@@ -884,7 +885,7 @@ function renderPanel(s, q, d) {
         <div style="display:flex;gap:4px;margin-bottom:8px;flex-wrap:wrap" id="range-btns">
           ${['1mo','6mo','1y','3y','5y','10y'].map((r,i)=>`<button onclick="loadChart('${r}',this)" class="chip${i===2?' on':''}" style="flex:none;padding:3px 10px">${r.replace('mo','M').replace('y','A')}</button>`).join('')}
         </div>
-        <canvas id="ch-price" height="130"></canvas>
+        <canvas id="ch-price" height="80" style="max-height:80px"></canvas>
       </div>
       <div class="gcard"><h4>Catalyseurs structurels</h4>
         ${(d.catalysts||[]).map(c=>`<div class="cat"><span style="font-size:14px">${c.icon}</span><div>
@@ -1099,52 +1100,72 @@ function kc(id) { if(charts[id]){charts[id].destroy();delete charts[id];} }
 
 function drawCharts(d) {
   if (!d) return;
-  const gridColor = 'rgba(46,50,64,.8)';
+  const gridColor = 'rgba(255,255,255,.06)';
 
-  // Revenue chart
+  // Revenue chart — normalize data shape
   kc('ch-ca');
-  if (d.ca?.labels && document.getElementById('ch-ca')) {
+  const caRaw = d.ca || d.revenue || d.chiffreAffaires;
+  const caLabels = caRaw?.labels || caRaw?.annees || caRaw?.years;
+  const caData   = caRaw?.data   || caRaw?.valeurs || caRaw?.values;
+  if (caLabels?.length && caData?.length && document.getElementById('ch-ca')) {
     charts['ch-ca'] = new Chart(document.getElementById('ch-ca'), {
       type:'bar',
-      data:{ labels:d.ca.labels, datasets:[{data:d.ca.data,backgroundColor:'rgba(99,102,241,.6)',borderColor:'rgba(99,102,241,1)',borderWidth:1,borderRadius:4}] },
-      options:{ responsive:true, plugins:{legend:{display:false}}, scales:{ x:{grid:{color:gridColor}}, y:{grid:{color:gridColor}} } }
+      data:{ labels:caLabels, datasets:[{data:caData, backgroundColor:'rgba(99,102,241,.55)', borderColor:'rgba(129,140,248,1)', borderWidth:1, borderRadius:5, borderSkipped:false}] },
+      options:{ responsive:true, plugins:{legend:{display:false}}, scales:{
+        x:{grid:{color:gridColor}, ticks:{color:'rgba(255,255,255,.3)'}},
+        y:{grid:{color:gridColor}, ticks:{color:'rgba(255,255,255,.3)'}}
+      }}
     });
   }
 
-  // Net income + margin
+  // Net income + margin — normalize
   kc('ch-mg');
-  if (d.earnings?.labels && document.getElementById('ch-mg')) {
+  const earRaw = d.earnings || d.resultatNet || d.netIncome;
+  const earLabels = earRaw?.labels || earRaw?.annees;
+  const earNet    = earRaw?.net    || earRaw?.valeurs || earRaw?.data;
+  const earMargin = earRaw?.margin || earRaw?.marge;
+  if (earLabels?.length && earNet?.length && document.getElementById('ch-mg')) {
+    const datasets = [
+      {data:earNet, label:'Résultat net', backgroundColor:'rgba(52,211,153,.45)', borderColor:'var(--teal)', borderWidth:1, borderRadius:5, yAxisID:'y'}
+    ];
+    if (earMargin?.length) datasets.push({data:earMargin, label:'Marge opér. %', type:'line', borderColor:'rgba(251,191,36,.8)', backgroundColor:'transparent', borderWidth:2, pointRadius:3, yAxisID:'y1'});
     charts['ch-mg'] = new Chart(document.getElementById('ch-mg'), {
-      type:'bar',
-      data:{ labels:d.earnings.labels, datasets:[
-        {data:d.earnings.net,label:'Résultat net',backgroundColor:'rgba(52,211,153,.5)',borderColor:'var(--teal)',borderWidth:1,borderRadius:4,yAxisID:'y'},
-        {data:d.earnings.margin,label:'Marge opér. %',type:'line',borderColor:'rgba(251,191,36,.8)',backgroundColor:'transparent',borderWidth:2,pointRadius:3,yAxisID:'y1'}
-      ]},
-      options:{ responsive:true, plugins:{legend:{display:true,position:'bottom',labels:{boxWidth:10,padding:12}}},
-        scales:{ x:{grid:{color:gridColor}}, y:{grid:{color:gridColor},position:'left'}, y1:{position:'right',grid:{display:false}} } }
+      type:'bar', data:{labels:earLabels, datasets},
+      options:{ responsive:true, plugins:{legend:{display:true,position:'bottom',labels:{boxWidth:8,padding:10,color:'rgba(255,255,255,.4)'}}},
+        scales:{ x:{grid:{color:gridColor},ticks:{color:'rgba(255,255,255,.3)'}}, y:{grid:{color:gridColor},position:'left',ticks:{color:'rgba(255,255,255,.3)'}}, y1:{position:'right',grid:{display:false},ticks:{color:'rgba(255,255,255,.3)'}} }
+      }
     });
   }
 
   // Segment donut
   kc('ch-sk');
-  if (d.segments?.labels && document.getElementById('ch-sk')) {
+  const segRaw = d.segments;
+  const segLabels = segRaw?.labels || segRaw?.noms;
+  const segData   = segRaw?.data   || segRaw?.valeurs;
+  if (segLabels?.length && segData?.length && document.getElementById('ch-sk')) {
     charts['ch-sk'] = new Chart(document.getElementById('ch-sk'), {
       type:'doughnut',
-      data:{ labels:d.segments.labels, datasets:[{data:d.segments.data,
-        backgroundColor:['rgba(99,102,241,.7)','rgba(52,211,153,.7)','rgba(251,191,36,.7)','rgba(248,113,113,.7)','rgba(167,139,250,.7)'],
-        borderColor:'var(--card)',borderWidth:2}] },
-      options:{ responsive:true, plugins:{legend:{position:'bottom',labels:{boxWidth:10,padding:10}}} }
+      data:{labels:segLabels, datasets:[{data:segData,
+        backgroundColor:['rgba(99,102,241,.75)','rgba(52,211,153,.75)','rgba(251,191,36,.75)','rgba(248,113,113,.75)','rgba(167,139,250,.75)'],
+        borderColor:'rgba(255,255,255,.06)',borderWidth:2}]},
+      options:{responsive:true, plugins:{legend:{position:'bottom',labels:{boxWidth:8,padding:10,color:'rgba(255,255,255,.4)'}}}}
     });
   }
 
-  // PE chart
+  // PE comparables
   kc('ch-pe');
-  if (d.peers?.labels && document.getElementById('ch-pe')) {
-    const colors = d.peers.labels.map(l=>l===curStock?.t.replace('.PA','').replace('-','.')?'rgba(99,102,241,.9)':'rgba(52,211,153,.5)');
+  const peRaw = d.peers || d.comparables;
+  const peLabels = peRaw?.labels || peRaw?.noms;
+  const pePE     = peRaw?.pe    || peRaw?.data;
+  if (peLabels?.length && pePE?.length && document.getElementById('ch-pe')) {
+    const colors = peLabels.map(l=>l===curStock?.t.replace('.PA','').replace('-','.')?'rgba(129,140,248,.9)':'rgba(52,211,153,.55)');
     charts['ch-pe'] = new Chart(document.getElementById('ch-pe'), {
       type:'bar',
-      data:{ labels:d.peers.labels, datasets:[{data:d.peers.pe,backgroundColor:colors,borderColor:colors.map(c=>c.replace('.9','1').replace('.5','1')),borderWidth:1,borderRadius:4}] },
-      options:{ responsive:true, plugins:{legend:{display:false}}, scales:{ x:{grid:{color:gridColor}}, y:{grid:{color:gridColor}} } }
+      data:{labels:peLabels, datasets:[{data:pePE, backgroundColor:colors, borderColor:colors.map(c=>c.replace('.9','1').replace('.55','1')), borderWidth:1, borderRadius:5}]},
+      options:{responsive:true, plugins:{legend:{display:false}}, scales:{
+        x:{grid:{color:gridColor},ticks:{color:'rgba(255,255,255,.3)'}},
+        y:{grid:{color:gridColor},ticks:{color:'rgba(255,255,255,.3)'}}
+      }}
     });
   }
 }
@@ -1334,8 +1355,159 @@ function calcJP() {
 }
 
 // ── PORTFOLIO ─────────────────────────────────────────────────
-let portfolio = JSON.parse(localStorage.getItem('pf_positions') || '[]');
-function savePortfolio() { localStorage.setItem('pf_positions', JSON.stringify(portfolio)); }
+// ── AUTH & PORTFOLIO SUPABASE ─────────────────────────────────
+let currentUser = null;
+let portfolio = [];
+
+// Auth helpers via Supabase REST
+async function sbAuth(endpoint, body) {
+  const r = await fetch(`${SUPABASE_URL}/auth/v1/${endpoint}`, {
+    method:'POST',
+    headers:{'apikey':SUPABASE_KEY,'Content-Type':'application/json'},
+    body:JSON.stringify(body)
+  });
+  return r.json();
+}
+
+async function signUp(email, password) {
+  const d = await sbAuth('signup', {email, password});
+  if (d.user) { currentUser = d.user; sbToken = d.access_token; await loadPortfolioFromDB(); renderAuthState(); showToast('Compte créé ✓'); return true; }
+  showToast('Erreur : '+(d.msg||d.error_description||'email déjà utilisé'));
+  return false;
+}
+
+async function signIn(email, password) {
+  const d = await sbAuth('token?grant_type=password', {email, password});
+  if (d.user) { currentUser = d.user; sbToken = d.access_token; await loadPortfolioFromDB(); renderAuthState(); showToast(`Connecté · ${email}`); return true; }
+  showToast('Identifiants incorrects');
+  return false;
+}
+
+async function signOut() {
+  try { await fetch(`${SUPABASE_URL}/auth/v1/logout`,{method:'POST',headers:{'apikey':SUPABASE_KEY,'Authorization':`Bearer ${sbToken}`}}); } catch(e){}
+  currentUser = null; sbToken = null; portfolio = [];
+  localStorage.removeItem('sb_token'); localStorage.removeItem('sb_user');
+  renderAuthState(); showToast('Déconnecté');
+}
+
+async function tryRestoreSession() {
+  const tok = localStorage.getItem('sb_token');
+  const usr = localStorage.getItem('sb_user');
+  if (!tok || !usr) return;
+  try {
+    const r = await fetch(`${SUPABASE_URL}/auth/v1/user`,{headers:{'apikey':SUPABASE_KEY,'Authorization':`Bearer ${tok}`}});
+    if (r.ok) { currentUser = JSON.parse(usr); sbToken = tok; await loadPortfolioFromDB(); renderAuthState(); }
+    else { localStorage.removeItem('sb_token'); localStorage.removeItem('sb_user'); }
+  } catch(e) {}
+}
+let sbToken = null;
+
+// Portfolio DB
+async function loadPortfolioFromDB() {
+  if (!currentUser) { portfolio = JSON.parse(localStorage.getItem('pf_positions')||'[]'); return; }
+  localStorage.setItem('sb_token', sbToken);
+  localStorage.setItem('sb_user', JSON.stringify(currentUser));
+  try {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/portfolios?user_id=eq.${currentUser.id}&select=*`,{
+      headers:{'apikey':SUPABASE_KEY,'Authorization':`Bearer ${sbToken}`}
+    });
+    if (r.ok) { const d = await r.json(); portfolio = Array.isArray(d) ? d.map(row=>row.data) : []; }
+  } catch(e) { portfolio = []; }
+}
+
+async function savePortfolio() {
+  if (!currentUser) { localStorage.setItem('pf_positions', JSON.stringify(portfolio)); return; }
+  try {
+    // upsert one row per user with full portfolio as JSON
+    await fetch(`${SUPABASE_URL}/rest/v1/portfolios`, {
+      method:'POST',
+      headers:{'apikey':SUPABASE_KEY,'Authorization':`Bearer ${sbToken}`,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'},
+      body: JSON.stringify({user_id: currentUser.id, positions: portfolio, updated_at: new Date().toISOString()})
+    });
+  } catch(e) { localStorage.setItem('pf_positions', JSON.stringify(portfolio)); }
+}
+
+function renderAuthState() {
+  const btn = document.getElementById('authBtn');
+  if (!btn) return;
+  if (currentUser) {
+    btn.textContent = `👤 ${currentUser.email.split('@')[0]}`;
+    btn.style.borderColor = 'rgba(52,211,153,.4)';
+    btn.style.color = 'var(--teal)';
+    btn.onclick = showAccountMenu;
+  } else {
+    btn.textContent = '🔑 Connexion';
+    btn.style.borderColor = 'var(--glass-brd)';
+    btn.style.color = 'var(--light)';
+    btn.onclick = openAuthModal;
+  }
+}
+
+function showAccountMenu() {
+  const menu = document.getElementById('accountMenu');
+  if (menu) { menu.style.display = menu.style.display==='none'?'block':'none'; return; }
+  const btn = document.getElementById('authBtn');
+  const rect = btn.getBoundingClientRect();
+  const m = document.createElement('div');
+  m.id = 'accountMenu';
+  m.style.cssText = `position:fixed;top:${rect.bottom+6}px;right:${window.innerWidth-rect.right}px;background:rgba(13,17,32,.97);border:1px solid var(--glass-brd);border-radius:12px;padding:6px;z-index:500;min-width:180px;box-shadow:0 12px 32px rgba(0,0,0,.5);backdrop-filter:blur(20px)`;
+  m.innerHTML = `
+    <div style="padding:8px 12px;font-size:10px;color:var(--muted);border-bottom:1px solid var(--glass-brd);margin-bottom:4px">${currentUser?.email}</div>
+    <button onclick="showPortfolio();closeAccountMenu()" style="width:100%;padding:8px 12px;background:none;border:none;color:var(--light);font-size:11px;text-align:left;cursor:pointer;border-radius:8px;font-family:var(--sans)" onmouseover="this.style.background='rgba(255,255,255,.05)'" onmouseout="this.style.background='none'">💼 Mon portefeuille</button>
+    <button onclick="signOut();closeAccountMenu()" style="width:100%;padding:8px 12px;background:none;border:none;color:var(--red);font-size:11px;text-align:left;cursor:pointer;border-radius:8px;font-family:var(--sans)" onmouseover="this.style.background='rgba(248,113,113,.06)'" onmouseout="this.style.background='none'">Déconnexion</button>`;
+  document.body.appendChild(m);
+  setTimeout(()=>document.addEventListener('click', closeAccountMenuOutside), 10);
+}
+function closeAccountMenu() { const m=document.getElementById('accountMenu'); if(m) m.remove(); document.removeEventListener('click',closeAccountMenuOutside); }
+function closeAccountMenuOutside(e) { if(!document.getElementById('accountMenu')?.contains(e.target) && e.target.id!=='authBtn') closeAccountMenu(); }
+
+function openAuthModal() {
+  const el = document.createElement('div');
+  el.className = 'modal-bg'; el.id = 'authModalBg';
+  el.style.display = 'flex';
+  el.onclick = e => { if(e.target.id==='authModalBg') el.remove(); };
+  el.innerHTML = `<div class="modal">
+    <h3>🔑 Connexion / Inscription</h3>
+    <p class="modal-sub">Connecte-toi pour sauvegarder ton portefeuille sur tous tes appareils.</p>
+    <div class="field"><label>Email</label><input id="auth-email" type="email" placeholder="ton@email.com" autocomplete="email"></div>
+    <div class="field"><label>Mot de passe</label><input id="auth-pwd" type="password" placeholder="••••••••" autocomplete="current-password"></div>
+    <div id="auth-hint" style="font-size:10px;color:var(--muted);margin-top:2px;min-height:16px"></div>
+    <div class="btn-row" style="margin-top:12px">
+      <button class="btn btn-p" onclick="handleSignIn()">Se connecter</button>
+      <button class="btn btn-g" onclick="handleSignUp()" style="border-color:rgba(52,211,153,.3);color:var(--teal)">Créer un compte</button>
+      <button class="btn btn-g" onclick="document.getElementById('authModalBg').remove()">Annuler</button>
+    </div>
+    <div style="font-size:9px;color:var(--muted);text-align:center;margin-top:10px;line-height:1.6">Ton portefeuille est chiffré et privé.<br>Aucune donnée financière n'est partagée.</div>
+  </div>`;
+  document.body.appendChild(el);
+  setTimeout(()=>el.querySelector('#auth-email').focus(), 100);
+  el.querySelector('#auth-pwd').addEventListener('keydown', e=>{ if(e.key==='Enter') handleSignIn(); });
+}
+
+async function handleSignIn() {
+  const email = document.getElementById('auth-email')?.value.trim();
+  const pwd   = document.getElementById('auth-pwd')?.value;
+  const hint  = document.getElementById('auth-hint');
+  if (!email||!pwd) { if(hint) hint.textContent='Remplis email et mot de passe'; return; }
+  if(hint) hint.textContent = 'Connexion…';
+  const ok = await signIn(email, pwd);
+  if (ok) document.getElementById('authModalBg')?.remove();
+  else if(hint) { hint.textContent='Email ou mot de passe incorrect'; hint.style.color='var(--red)'; }
+}
+
+async function handleSignUp() {
+  const email = document.getElementById('auth-email')?.value.trim();
+  const pwd   = document.getElementById('auth-pwd')?.value;
+  const hint  = document.getElementById('auth-hint');
+  if (!email||!pwd) { if(hint) hint.textContent='Remplis email et mot de passe'; return; }
+  if (pwd.length < 6) { if(hint) { hint.textContent='Mot de passe trop court (6 car. min)'; hint.style.color='var(--red)'; } return; }
+  if(hint) hint.textContent = 'Création du compte…';
+  const ok = await signUp(email, pwd);
+  if (ok) document.getElementById('authModalBg')?.remove();
+  else if(hint) { hint.style.color='var(--red)'; }
+}
+
+
 
 function showPortfolio() {
   curStock = null;
@@ -1712,6 +1884,7 @@ function closeChartModal() {
 
 // ── INIT ──────────────────────────────────────────────────────
 buildList(); updateCounts(); loadCustomStocks(); fetchVisibleQuotes();
+tryRestoreSession();
 </script>
 </body>
 </html>
