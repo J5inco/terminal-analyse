@@ -942,10 +942,10 @@ function renderPanel(s, q, d) {
   <div class="tc" id="tc-fin">
     <div class="g2">
       <div class="gcard"><h4>Chiffre d'affaires (${d.ca?.unit||''})</h4>
-        ${d.ca?.labels?.length ? `<canvas id="ch-ca" height="120"></canvas>` : `<div style="height:120px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:11px">Données non disponibles dans l'analyse IA</div>`}
+        ${d.ca?.labels?.length ? `<canvas id="ch-ca" height="120" style="width:100%;height:120px"></canvas>` : `<div style="height:120px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:11px">Données non disponibles dans l'analyse IA</div>`}
       </div>
       <div class="gcard"><h4>Résultat net & Marge opérationnelle</h4>
-        ${d.earnings?.labels?.length ? `<canvas id="ch-mg" height="120"></canvas>` : `<div style="height:120px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:11px">Données non disponibles dans l'analyse IA</div>`}
+        ${d.earnings?.labels?.length ? `<canvas id="ch-mg" height="120" style="width:100%;height:120px"></canvas>` : `<div style="height:120px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:11px">Données non disponibles dans l'analyse IA</div>`}
       </div>
     </div>
     <div class="g2">
@@ -1017,7 +1017,7 @@ function renderPanel(s, q, d) {
   <div class="tc" id="tc-val">
     <div class="g2">
       <div class="gcard"><h4>P/E vs comparables sectoriels</h4>
-        ${d.peers?.labels?.length ? `<canvas id="ch-pe" height="190"></canvas>` : `<div style="height:190px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:11px">Données comparables non disponibles dans l'analyse IA</div>`}
+        ${d.peers?.labels?.length ? `<canvas id="ch-pe" height="180" style="width:100%;height:180px"></canvas>` : `<div style="height:180px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:11px">Données comparables non disponibles dans l'analyse IA</div>`}
       </div>
       <div class="gcard"><h4>Métriques de valorisation</h4>
         <div style="display:flex;flex-direction:column;gap:5px">
@@ -1222,8 +1222,8 @@ function drawCharts(d) {
     if (earMargin?.length) datasets.push({data:earMargin, label:'Marge opér. %', type:'line', borderColor:'rgba(251,191,36,.8)', backgroundColor:'transparent', borderWidth:2, pointRadius:3, yAxisID:'y1'});
     charts['ch-mg'] = new Chart(document.getElementById('ch-mg'), {
       type:'bar', data:{labels:earLabels, datasets},
-      options:{ responsive:true, plugins:{legend:{display:true,position:'bottom',labels:{boxWidth:8,padding:10,color:'rgba(255,255,255,.4)'}}},
-        scales:{ x:{grid:{color:gridColor},ticks:{color:'rgba(255,255,255,.3)'}}, y:{grid:{color:gridColor},position:'left',ticks:{color:'rgba(255,255,255,.3)'}}, y1:{position:'right',grid:{display:false},ticks:{color:'rgba(255,255,255,.3)'}} }
+      options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:true,position:'bottom',labels:{boxWidth:8,padding:10,color:'rgba(255,255,255,.4)'}}},
+        scales:{ x:{grid:{color:gridColor},ticks:{color:'rgba(255,255,255,.3)',font:{size:9}}}, y:{grid:{color:gridColor},position:'left',ticks:{color:'rgba(255,255,255,.3)',font:{size:9}}}, y1:{position:'right',grid:{display:false},ticks:{color:'rgba(255,255,255,.3)',font:{size:9}}} }
       }
     });
   }
@@ -1239,7 +1239,7 @@ function drawCharts(d) {
       data:{labels:segLabels, datasets:[{data:segData,
         backgroundColor:['rgba(59,130,246,.75)','rgba(6,182,212,.75)','rgba(251,191,36,.75)','rgba(248,113,113,.75)','rgba(6,182,212,.75)'],
         borderColor:'rgba(255,255,255,.06)',borderWidth:2}]},
-      options:{responsive:true, plugins:{legend:{position:'bottom',labels:{boxWidth:8,padding:10,color:'rgba(255,255,255,.4)'}}}}
+      options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom',labels:{boxWidth:8,padding:10,color:'rgba(255,255,255,.4)'}}}}
     });
   }
 
@@ -1253,9 +1253,9 @@ function drawCharts(d) {
     charts['ch-pe'] = new Chart(document.getElementById('ch-pe'), {
       type:'bar',
       data:{labels:peLabels, datasets:[{data:pePE, backgroundColor:colors, borderColor:colors.map(c=>c.replace('.9','1').replace('.55','1')), borderWidth:1, borderRadius:5}]},
-      options:{responsive:true, plugins:{legend:{display:false}}, scales:{
-        x:{grid:{color:gridColor},ticks:{color:'rgba(255,255,255,.3)'}},
-        y:{grid:{color:gridColor},ticks:{color:'rgba(255,255,255,.3)'}}
+      options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{
+        x:{grid:{color:gridColor},ticks:{color:'rgba(255,255,255,.3)',font:{size:9}}},
+        y:{grid:{color:gridColor},ticks:{color:'rgba(255,255,255,.3)',font:{size:9}}}
       }}
     });
   }
