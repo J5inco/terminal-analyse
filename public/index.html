@@ -1703,27 +1703,23 @@ function showPortfolio() {
 
 async function renderPortfolio() {
   const ap = document.getElementById('analysisPanel');
-  ap.innerHTML = `<div class="pf-screen"><div style="display:flex;align-items:center;gap:10px"><div class="spin" style="width:20px;height:20px;border-width:2px"></div><span style="color:var(--muted);font-size:11px">Chargement des cours…</span></div></div>`;
-  await Promise.allSettled(portfolio.map(p=>fetchQuote(p.ticker)));
+  if (portfolio.length > 0) { ap.innerHTML = `<div class="pf-screen"><div style="display:flex;align-items:center;gap:10px"><div class="spin" style="width:20px;height:20px;border-width:2px"></div><span style="color:var(--muted);font-size:11px">Chargement des cours…</span></div></div>`; await Promise.allSettled(portfolio.map(p=>fetchQuote(p.ticker))); }
 
   let totalInvest=0, totalValue=0, totalDiv=0;
   const COLORS=['#3b82f6','#06b6d4','#fbbf24','#f87171','#06b6d4','#4ade80','#fb923c','#38bdf8','#e879f9','#2dd4bf'];
 
   const rows = portfolio.map((p,i) => {
     const q = quotes[p.ticker]||{};
-    const prixActuel = q.priceRaw || parseFloat((q.price||'0').replace(/[^\d.]/g,'')) || 0;
-    const sym = q.currency==='EUR' ? '€' : '$';
+    const prixActuel = q.priceRaw||0;
     const valeur = prixActuel*p.qty;
     const invest = p.pru*p.qty;
     const plVal  = valeur-invest;
     const plPct  = invest>0?(plVal/invest*100):0;
-    // Auto-remplir dividende Yahoo si non saisi manuellement
-    const divAnnual = p.divAnnual || (q.divAnnual||0);
-    const divTotal = divAnnual*p.qty;
-    const yieldPRU = p.pru>0&&divAnnual?((divAnnual/p.pru)*100):0;
+    const divTotal = (p.divAnnual||0)*p.qty;
+    const yieldPRU = p.pru>0&&p.divAnnual?((p.divAnnual/p.pru)*100):0;
     const targetPct = p.target&&prixActuel>0?((p.target-prixActuel)/prixActuel*100):null;
     totalInvest += invest; totalValue += valeur; totalDiv += divTotal;
-    return {p, q, prixActuel, sym, valeur, invest, plVal, plPct, divTotal, yieldPRU, targetPct, color:COLORS[i%COLORS.length]};
+    return {p, q, prixActuel, valeur, invest, plVal, plPct, divTotal, yieldPRU, targetPct, color:COLORS[i%COLORS.length]};
   });
 
   const totalPL    = totalValue-totalInvest;
@@ -1783,15 +1779,15 @@ async function renderPortfolio() {
           </div>
         </div>
         <div class="pf-cell" style="color:var(--light)">${r.p.qty}</div>
-        <div class="pf-cell">${r.sym}${r.p.pru.toFixed(2)}</div>
-        <div class="pf-cell" style="color:${r.q?.pos?'var(--green)':'var(--red)'}">${r.prixActuel>0?r.sym+r.prixActuel.toFixed(2):'—'}</div>
-        <div class="pf-cell" style="color:var(--white)">${r.valeur>0?r.sym+r.valeur.toLocaleString('fr-FR',{maximumFractionDigits:0}):'—'}</div>
+        <div class="pf-cell">${r.p.pru.toFixed(2)}</div>
+        <div class="pf-cell" style="color:${r.q?.pos?'var(--green)':'var(--red)'}">${r.prixActuel>0?r.prixActuel.toFixed(2):'—'}</div>
+        <div class="pf-cell" style="color:var(--white)">${r.valeur>0?r.valeur.toLocaleString('fr-FR',{maximumFractionDigits:0})+'€':'—'}</div>
         <div class="pf-cell">
           <div style="color:${r.plPct>=0?'var(--green)':'var(--red)'};font-weight:700">${r.plPct>=0?'+':''}${r.plPct.toFixed(2)}%</div>
-          <div style="font-size:9px;color:${r.plVal>=0?'var(--green)':'var(--red)'}">${r.plVal>=0?'+':''}${r.sym}${Math.abs(r.plVal).toLocaleString('fr-FR',{maximumFractionDigits:0})}</div>
+          <div style="font-size:9px;color:${r.plVal>=0?'var(--green)':'var(--red)'}">${r.plVal>=0?'+':''}${r.plVal.toLocaleString('fr-FR',{maximumFractionDigits:0})}€</div>
         </div>
         <div class="pf-cell">
-          ${r.divTotal>0?`<div style="color:var(--teal)">${r.sym}${r.divTotal.toFixed(0)}/an</div>
+          ${r.p.divAnnual?`<div style="color:var(--teal)">${r.divTotal.toFixed(0)}€/an</div>
           <div style="font-size:9px;color:var(--muted)">Yield PRU : ${r.yieldPRU.toFixed(2)}%</div>`
           :`<button onclick="editDiv('${r.p.ticker}')" style="font-size:9px;color:var(--muted);background:none;border:1px dashed var(--brd);border-radius:4px;padding:2px 6px;cursor:pointer;font-family:var(--mono)">+ div</button>`}
         </div>
@@ -1862,8 +1858,6 @@ function addPosition() {
   const div    = parseFloat(document.getElementById('pf-div')?.value)||0;
   const target = parseFloat(document.getElementById('pf-target')?.value)||null;
   if (!ticker||!qty||!pru) { showToast('Remplis Ticker, Quantité et PRU'); return; }
-  // Auto-remplir dividende depuis Yahoo si non saisi
-  if (!div) { const qData = quotes[ticker]; if (qData?.divAnnual) div = qData.divAnnual; }
   const idx = portfolio.findIndex(p=>p.ticker===ticker);
   const pos = {ticker, qty, pru, divAnnual:div||null, target:target||null};
   if (idx>=0) { portfolio[idx]=pos; showToast(`${ticker} mis à jour ✓`); }
