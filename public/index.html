@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>J5 · Investir simplement</title>
+<title>Boursinvest · Investir simplement</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=DM+Mono:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -553,6 +553,17 @@ button{font-family:var(--font);cursor:pointer}
         <div class="wi-res">
           <div><div class="wr-lb">Valeur aujourd'hui</div><div class="wr-vl" id="wiVal">—</div></div>
           <div class="wr-gn" id="wiGn">—</div>
+        </div>
+        <div id="wiDivBlock" style="display:none;margin-top:10px;padding:10px 12px;background:rgba(251,191,36,.06);border:1px solid rgba(251,191,36,.18);border-radius:8px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+            <span style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em">Dont dividendes perçus</span>
+            <span style="font-size:14px;font-weight:700;font-family:var(--mono);color:#fbbf24" id="wiDivAmt">—</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:10px;color:var(--muted)">Plus-value cours seul</span>
+            <span style="font-size:13px;font-weight:600;font-family:var(--mono);color:var(--light)" id="wiPriceOnly">—</span>
+          </div>
+          <div style="margin-top:8px;font-size:9px;color:var(--muted);line-height:1.5" id="wiDivDetail"></div>
         </div>
       </div>
     </div>
@@ -1260,20 +1271,65 @@ async function recalcWi(){
   const amt=parseFloat(document.getElementById('wiAmt').value)||1000;
   let perf=wiPerfs[period];
   if(perf===undefined){
-    // Load if not cached
     const d=await fetch(`/api/quote?ticker=${encodeURIComponent(curStock?.t||'')}&mode=history&range=${period}`).then(r=>r.json()).catch(()=>({points:[]}));
     const pts=d.points||[];
     if(pts.length>1)perf=(pts[pts.length-1].v-pts[0].v)/pts[0].v;
     else perf=0;
     wiPerfs[period]=perf;
   }
-  const now=amt*(1+perf);
-  const gain=now-amt;
+
   const sym=curQuote?.currency==='EUR'?'€':'$';
-  document.getElementById('wiVal').textContent=now.toLocaleString('fr-FR',{maximumFractionDigits:0})+sym;
-  const gEl=document.getElementById('wiGn');
-  gEl.textContent=(gain>=0?'+':'-')+sym+Math.abs(gain).toLocaleString('fr-FR',{maximumFractionDigits:0});
-  gEl.className='wr-gn '+(gain>=0?'pos':'neg');
+  const years=period==='1y'?1:period==='3y'?3:5;
+
+  // Calcul plus-value cours
+  const priceGain=amt*perf;
+  const valWithPrice=amt+priceGain;
+
+  // Calcul dividendes — on récupère le yield depuis l'analyse IA ou les ratios
+  let divYield=0;
+  if(analysisData){
+    // Chercher dans les ratios d'abord (ex: "3,9%" → 0.039)
+    const divRatio=analysisData.ratios?.find(r=>r.l&&r.l.toLowerCase().includes('div'));
+    if(divRatio){
+      const raw=parseFloat((divRatio.v||'0').replace(',','.').replace('%',''));
+      divYield=raw>1?raw/100:raw;
+    }
+    // Fallback: divYield brut depuis les données envoyées à l'API
+    if(!divYield){
+      const raw=parseFloat(analysisData.divYield||curQuote?.divYield||0);
+      divYield=raw>1?raw/100:raw;
+    }
+  }
+  const divBlock=document.getElementById('wiDivBlock');
+
+  let totalDiv=0;
+  if(divYield>0){
+    // Dividendes réinvestis (intérêts composés) vs non réinvestis
+    const divReinvested=amt*((1+divYield)**years-1); // total si réinvestis
+    const divSimple=amt*divYield*years; // total sans réinvestissement
+    totalDiv=divSimple; // on affiche le simple, plus lisible
+
+    const totalVal=valWithPrice+totalDiv;
+    const totalGain=totalVal-amt;
+
+    document.getElementById('wiVal').textContent=totalVal.toLocaleString('fr-FR',{maximumFractionDigits:0})+sym;
+    const gEl=document.getElementById('wiGn');
+    gEl.textContent=(totalGain>=0?'+':'')+totalGain.toLocaleString('fr-FR',{maximumFractionDigits:0,signDisplay:'always'})+sym+' ('+(totalGain/amt*100).toFixed(1)+'%)';
+    gEl.className='wr-gn '+(totalGain>=0?'pos':'neg');
+
+    document.getElementById('wiDivAmt').textContent='+'+(totalDiv).toLocaleString('fr-FR',{maximumFractionDigits:0})+sym;
+    document.getElementById('wiPriceOnly').textContent=(priceGain>=0?'+':'')+priceGain.toLocaleString('fr-FR',{maximumFractionDigits:0})+sym;
+    document.getElementById('wiDivDetail').textContent=`Yield dividende : ${(divYield*100).toFixed(2)}%/an × ${years} ans = ${(divYield*years*100).toFixed(1)}% de revenus passifs sur ton investissement initial. Dividendes non réinvestis.`;
+    divBlock.style.display='block';
+  } else {
+    // Pas de dividende
+    const gain=valWithPrice-amt;
+    document.getElementById('wiVal').textContent=valWithPrice.toLocaleString('fr-FR',{maximumFractionDigits:0})+sym;
+    const gEl=document.getElementById('wiGn');
+    gEl.textContent=(gain>=0?'+':'')+gain.toLocaleString('fr-FR',{maximumFractionDigits:0})+sym+' ('+(gain/amt*100).toFixed(1)+'%)';
+    gEl.className='wr-gn '+(gain>=0?'pos':'neg');
+    divBlock.style.display='none';
+  }
 }
 
 // ══════════════════════════════════════════════════════
