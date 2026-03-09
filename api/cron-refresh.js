@@ -1,9 +1,12 @@
-// api/cron-refresh.js — Pré-génération nocturne via Anthropic Batch API
-// Tourne toutes les 2 semaines à 2h du matin (configuré dans vercel.json)
-// Génère les 80 actions CAC40+Nasdaq100 et les stocke dans Supabase
+// api/cron-refresh.js
+// Lance un batch Anthropic pour les analyses à rafraîchir
+// et enregistre le batch dans Supabase.
+// Ce fichier NE FAIT PAS l'attente du résultat.
 
 const SB_URL = process.env.SUPABASE_URL;
 const SB_KEY = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_ANON_KEY;
+const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
+const CRON_SECRET = process.env.CRON_SECRET;
 
 // ── LISTE DES 80 ACTIONS ─────────────────────────────────────────────────────
 const ACTIONS = [
@@ -91,30 +94,57 @@ const ACTIONS = [
   {t:'ISRG',n:'Intuitive Surgical',e:'nasdaq',s:'Healthcare'},
 ];
 
-// ── SUPABASE HELPERS ─────────────────────────────────────────────────────────
-async function sbGet(ticker) {
-  if (!SB_URL || !SB_KEY) return null;
+// ── HELPERS SUPABASE ─────────────────────────────────────────────────────────
+async function sbRequest(path, { method = 'GET', body, headers = {} } = {}) {
+  const r = await fetch(`${SB_URL}/rest/v1/${path}`, {
+    method,
+    headers: {
+      apikey: SB_KEY,
+      Authorization: `Bearer ${SB_KEY}`,
+      'Content-Type': 'application/json',
+      ...headers
+    },
+    body: body ? JSON.stringify(body) : undefined
+  });
+
+  const text = await r.text();
+  let data = null;
+
   try {
-    const r = await fetch(`${SB_URL}/rest/v1/analyses_cache?ticker=eq.${encodeURIComponent(ticker)}&limit=1`, {
-      headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}` }
-    });
-    const arr = await r.json();
-    return arr?.[0] || null;
-  } catch(e) { return null; }
+    data = text ? JSON.parse(text) : null;
+  } catch {
+    data = text;
+  }
+
+  if (!r.ok) {
+    throw new Error(`Supabase error ${r.status}: ${typeof data === 'string' ? data : JSON.stringify(data)}`);
+  }
+
+  return data;
 }
 
-async function sbUpsert(ticker, data) {
-  if (!SB_URL || !SB_KEY) return;
-  try {
-    await fetch(`${SB_URL}/rest/v1/analyses_cache`, {
-      method: 'POST',
-      headers: {
-        'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}`,
-        'Content-Type': 'application/json', 'Prefer': 'resolution=merge-duplicates'
-      },
-      body: JSON.stringify({ ticker: ticker.toUpperCase(), data, updated_at: new Date().toISOString() })
-    });
-  } catch(e) {}
+async function sbGetCache(ticker) {
+  const rows = await sbRequest(
+    `analyses_cache?ticker=eq.${encodeURIComponent(ticker)}&select=ticker,updated_at&limit=1`
+  );
+  return rows?.[0] || null;
+}
+
+async function sbInsertBatch({ batchId, tickers, meta }) {
+  await sbRequest('analysis_batches', {
+    method: 'POST',
+    headers: {
+      Prefer: 'resolution=merge-duplicates'
+    },
+    body: {
+      batch_id: batchId,
+      status: 'queued',
+      tickers,
+      source: 'cron-refresh',
+      requested_at: new Date().toISOString(),
+      meta: meta || {}
+    }
+  });
 }
 
 // ── BUILD PROMPT ─────────────────────────────────────────────────────────────
@@ -157,118 +187,174 @@ JSON STRICT sans backticks:
 {"reco":"ACHETER|ACCUMULER|NEUTRE|ALLÉGER|VENDRE","profile":"${profileLabel}","target":"X ${currSym}","upside":"+X%","nextEvent":{"label":"","date":""},"kpis":[{"label":"","val":"","sub":"","color":"teal"},{"label":"","val":"","sub":"","color":"green"},{"label":"","val":"","sub":"","color":"blue"}],"ca":{"labels":["2021","2022","2023","2024"],"data":[],"unit":"Md${currSym}"},"earnings":{"labels":["2021","2022","2023","2024"],"net":[],"netUnit":"M${currSym}","margin":[]},"segments":{"labels":[],"pct":[],"caRaw":[],"unit":"M${currSym}"},"peers":{"labels":[],"pe":[],"ev":[]},"perHistory":{"labels":["2021","2022","2023","2024"],"data":[],"avg":0},"fcfYieldHistory":{"labels":["2021","2022","2023","2024"],"data":[]},"valScore":5,"valLights":[{"label":"","val":"","signal":"green"},{"label":"","val":"","signal":"amber"},{"label":"","val":"","signal":"green"},{"label":"","val":"","signal":"red"}],"justePrice":{"base":0,"baseLabel":"","adjustments":[{"label":"","impact":0,"positive":true}],"final":0,"safetyMarginPct":5,"currentPrice":0,"vsCurrentPct":0,"dcf":{"labels":["2025e","2026e","2027e","2028e","Val.term."],"data":[],"unit":"M${currSym}"},"qualitativeImpact":""},"expectedReturn":0,"expectedReturnDetail":"","bnaHistory":{"labels":["2021","2022","2023","2024"],"data":[]},"divHistory":{"labels":["2021","2022","2023","2024"],"data":[]},"debtHistory":{"labels":["2021","2022","2023","2024"],"data":[]},"roicHistory":{"labels":["2021","2022","2023","2024"],"data":[]},"fcfAbsHistory":{"labels":["2021","2022","2023","2024"],"data":[],"unit":"M"},"ratios":[{"l":"","v":"","c":"green"}],"qualitative":{"positives":[],"negatives":[],"governance":"","moat":""},"news":[{"title":"","summary":"","impact":"positive","date":""},{"title":"","summary":"","impact":"neutral","date":""}],"calendar":[{"label":"","date":"","type":"results"}],"catalysts":[{"icon":"🎯","title":"","text":""},{"icon":"📈","title":"","text":""}],"risks":[{"warn":false,"title":"","text":""},{"warn":true,"title":"","text":""}],"verdict":""}`;
 }
 
-// ── MAIN HANDLER ─────────────────────────────────────────────────────────────
+function isTrue(v) {
+  return ['1', 'true', 'yes', 'on'].includes(String(v || '').toLowerCase());
+}
+
+function parsePositiveInt(v, fallback = null) {
+  const n = Number(v);
+  if (!Number.isFinite(n) || n <= 0) return fallback;
+  return Math.floor(n);
+}
+
+function getAuthToken(req) {
+  const authHeader = req.headers['authorization'] || '';
+  if (authHeader.startsWith('Bearer ')) {
+    return authHeader.slice(7).trim();
+  }
+  return '';
+}
+
 export default async function handler(req, res) {
-  // Sécurité : vérifier le token cron Vercel
-  const authHeader = req.headers['authorization'];
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
-
-  const CACHE_DAYS = 14;
-  const now = Date.now();
-  const toRefresh = [];
-
-  // Identifier les actions qui ont besoin d'être rafraîchies
-  for (const action of ACTIONS) {
-    const cached = await sbGet(action.t);
-    if (!cached) {
-      toRefresh.push(action);
-    } else {
-      const ageDays = (now - new Date(cached.updated_at).getTime()) / 86400000;
-      if (ageDays >= CACHE_DAYS) toRefresh.push(action);
+  try {
+    if (req.method !== 'GET' && req.method !== 'POST') {
+      return res.status(405).json({ error: 'Method not allowed' });
     }
-  }
 
-  if (toRefresh.length === 0) {
-    return res.status(200).json({ message: 'Tout est à jour', refreshed: 0 });
-  }
-
-  // Construire les requêtes Batch
-  const batchRequests = toRefresh.map(action => ({
-    custom_id: action.t,
-    params: {
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 3500,
-      messages: [{ role: 'user', content: buildPrompt(action) }]
-    }
-  }));
-
-  // Envoyer le Batch à Anthropic
-  const batchRes = await fetch('https://api.anthropic.com/v1/messages/batches', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': process.env.ANTHROPIC_API_KEY,
-      'anthropic-version': '2023-06-01',
-      'anthropic-beta': 'message-batches-2024-09-24'
-    },
-    body: JSON.stringify({ requests: batchRequests })
-  });
-
-  const batchData = await batchRes.json();
-  if (!batchRes.ok) {
-    return res.status(500).json({ error: batchData.error?.message || 'Batch API error', detail: batchData });
-  }
-
-  const batchId = batchData.id;
-
-  // Polling : attendre que le batch soit terminé (max 10 min)
-  let attempts = 0;
-  let results = null;
-  while (attempts < 60) {
-    await new Promise(r => setTimeout(r, 10000)); // attendre 10s
-    const statusRes = await fetch(`https://api.anthropic.com/v1/messages/batches/${batchId}`, {
-      headers: {
-        'x-api-key': process.env.ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01',
-        'anthropic-beta': 'message-batches-2024-09-24'
-      }
-    });
-    const statusData = await statusRes.json();
-    if (statusData.processing_status === 'ended') {
-      // Récupérer les résultats
-      const resultsRes = await fetch(statusData.results_url, {
-        headers: {
-          'x-api-key': process.env.ANTHROPIC_API_KEY,
-          'anthropic-version': '2023-06-01',
-          'anthropic-beta': 'message-batches-2024-09-24'
+    if (!SB_URL || !SB_KEY || !ANTHROPIC_API_KEY || !CRON_SECRET) {
+      return res.status(500).json({
+        error: 'Variables manquantes',
+        missing: {
+          SUPABASE_URL: !SB_URL,
+          SUPABASE_SERVICE_KEY_OR_ANON: !SB_KEY,
+          ANTHROPIC_API_KEY: !ANTHROPIC_API_KEY,
+          CRON_SECRET: !CRON_SECRET
         }
       });
-      const text = await resultsRes.text();
-      // Résultats en JSONL (une ligne par résultat)
-      results = text.trim().split('\n').map(line => JSON.parse(line));
-      break;
     }
-    attempts++;
-  }
 
-  if (!results) {
-    return res.status(202).json({ message: 'Batch lancé mais timeout polling', batchId, queued: toRefresh.length });
-  }
-
-  // Stocker chaque résultat dans Supabase
-  let saved = 0;
-  for (const result of results) {
-    if (result.result?.type === 'succeeded') {
-      try {
-        const raw = result.result.message.content.map(c => c.text || '').join('');
-        const clean = raw.replace(/```json|```/g, '').trim();
-        const jsonMatch = clean.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-          const parsed = JSON.parse(jsonMatch[0]);
-          await sbUpsert(result.custom_id, parsed);
-          saved++;
-        }
-      } catch(e) { /* continuer */ }
+    const token = getAuthToken(req);
+    if (token !== CRON_SECRET) {
+      return res.status(401).json({ error: 'Unauthorized' });
     }
-  }
 
-  return res.status(200).json({
-    message: `Batch terminé`,
-    batchId,
-    queued: toRefresh.length,
-    saved,
-    failed: results.length - saved
-  });
+    const q = req.query || {};
+    const tickerParam = q.ticker ? String(q.ticker).trim().toUpperCase() : '';
+    const force = isTrue(q.force);
+    const dryRun = isTrue(q.dryRun);
+    const limit = parsePositiveInt(q.limit, null);
+    const CACHE_DAYS = 14;
+    const now = Date.now();
+
+    let selected = ACTIONS;
+
+    if (tickerParam) {
+      selected = ACTIONS.filter(a => a.t.toUpperCase() === tickerParam);
+      if (selected.length === 0) {
+        return res.status(404).json({ error: `Ticker introuvable: ${tickerParam}` });
+      }
+    }
+
+    if (limit) {
+      selected = selected.slice(0, limit);
+    }
+
+    const cacheRows = await Promise.all(
+      selected.map(async action => {
+        const cached = await sbGetCache(action.t);
+        return { action, cached };
+      })
+    );
+
+    const toRefresh = cacheRows
+      .filter(({ cached }) => {
+        if (force) return true;
+        if (!cached?.updated_at) return true;
+        const ageDays = (now - new Date(cached.updated_at).getTime()) / 86400000;
+        return ageDays >= CACHE_DAYS;
+      })
+      .map(({ action }) => action);
+
+    if (dryRun) {
+      return res.status(200).json({
+        mode: 'dryRun',
+        selected: selected.length,
+        queued: toRefresh.length,
+        force,
+        tickers: toRefresh.map(a => a.t)
+      });
+    }
+
+    if (toRefresh.length === 0) {
+      return res.status(200).json({
+        message: 'Tout est déjà à jour',
+        queued: 0,
+        force
+      });
+    }
+
+    const batchRequests = toRefresh.map(action => ({
+      custom_id: action.t,
+      params: {
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 3500,
+        messages: [
+          {
+            role: 'user',
+            content: buildPrompt(action)
+          }
+        ]
+      }
+    }));
+
+    const batchRes = await fetch('https://api.anthropic.com/v1/messages/batches', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01',
+        'anthropic-beta': 'message-batches-2024-09-24'
+      },
+      body: JSON.stringify({
+        requests: batchRequests
+      })
+    });
+
+    const batchText = await batchRes.text();
+    let batchData = null;
+
+    try {
+      batchData = batchText ? JSON.parse(batchText) : null;
+    } catch {
+      batchData = batchText;
+    }
+
+    if (!batchRes.ok) {
+      return res.status(500).json({
+        error: 'Anthropic batch creation failed',
+        status: batchRes.status,
+        detail: batchData
+      });
+    }
+
+    const batchId = batchData?.id;
+    if (!batchId) {
+      return res.status(500).json({
+        error: 'Anthropic n’a pas renvoyé de batch_id',
+        detail: batchData
+      });
+    }
+
+    await sbInsertBatch({
+      batchId,
+      tickers: toRefresh.map(a => a.t),
+      meta: {
+        count: toRefresh.length,
+        force,
+        ticker: tickerParam || null
+      }
+    });
+
+    return res.status(202).json({
+      message: 'Batch lancé avec succès',
+      batchId,
+      queued: toRefresh.length,
+      tickers: toRefresh.map(a => a.t)
+    });
+  } catch (err) {
+    console.error('cron-refresh error:', err);
+    return res.status(500).json({
+      error: err.message || 'Internal server error'
+    });
+  }
 }
