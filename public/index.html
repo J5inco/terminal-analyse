@@ -24,17 +24,9 @@ a{color:inherit;text-decoration:none}
 button{font-family:var(--font);cursor:pointer}
 
 /* ── VIEWS ── */
+.view{display:none;position:relative;z-index:1}
+.view.active{display:block}
 #homeView{display:block}
-/* ── STOCK VIEW AS FULLSCREEN MODAL ── */
-#stockView{
-  display:none;position:fixed;inset:0;z-index:90;
-  background:var(--bg);overflow-y:auto;
-  transform:translateY(40px);opacity:0;
-  transition:transform .35s cubic-bezier(.16,1,.3,1),opacity .35s ease;
-}
-#stockView.active{
-  display:block;transform:translateY(0);opacity:1;
-}
 
 /* ══ HOME ══════════════════════════════════════════════ */
 .home-wrap{min-height:100vh;display:flex;flex-direction:column}
@@ -521,7 +513,7 @@ button{font-family:var(--font);cursor:pointer}
         <div class="jp-prices">
           <div class="jp-p"><div class="jp-p-lb">Cours actuel</div><div class="jp-p-vl" id="jpCurrent">—</div></div>
           <div class="jp-p" style="border:1px solid rgba(79,142,247,.2)"><div class="jp-p-lb" style="color:var(--blue)">Juste prix IA</div><div class="jp-p-vl" style="color:var(--blue)" id="jpFinal">—</div><div class="jp-p-ds" id="jpVsAct">—</div></div>
-          <div class="jp-p"><div class="jp-p-lb">Marge de sécurité</div><div class="jp-p-vl" style="color:var(--green)" id="jpSafety">—</div><div class="jp-p-ds">-25% du juste prix</div></div>
+          <div class="jp-p"><div class="jp-p-lb">Marge de sécurité</div><div class="jp-p-vl" style="color:var(--green)" id="jpSafety">—</div><div class="jp-p-ds">-5% du juste prix</div></div>
         </div>
         <div class="jp-gauge" style="margin-bottom:10px"><div class="jp-gauge-fill" id="jpGauge" style="width:50%;background:var(--amber)"></div></div>
         <div style="font-size:10px;color:var(--muted);display:flex;justify-content:space-between;margin-bottom:10px"><span>Très sous-évalué</span><span>Juste prix</span><span>Très surévalué</span></div>
@@ -601,6 +593,22 @@ button{font-family:var(--font);cursor:pointer}
         <div class="gc"><div class="gc-t">Dette nette</div><div class="ch160"><canvas id="debtChart"></canvas></div></div>
       </div>
       <div class="g2">
+        <div class="gc">
+          <div class="gc-t">ROIC historique % <span style="font-size:8px;color:var(--muted);font-family:var(--mono);margin-left:4px">Return on Invested Capital</span></div>
+          <div class="ch160"><canvas id="roicChart"></canvas></div>
+          <div style="background:rgba(167,139,250,.07);border:1px solid rgba(167,139,250,.15);border-radius:7px;padding:7px 10px;font-size:10px;color:var(--purple);margin-top:8px;line-height:1.5">
+            💡 <b>ROIC</b> = résultat opérationnel net / capital investi. Un ROIC &gt; 15% sur 5 ans = entreprise de qualité exceptionnelle (pricing power, moat solide).
+          </div>
+        </div>
+        <div class="gc">
+          <div class="gc-t">Free Cash Flow absolu <span style="font-size:8px;color:var(--muted);font-family:var(--mono);margin-left:4px">Cash réellement généré</span></div>
+          <div class="ch160"><canvas id="fcfAbsChart"></canvas></div>
+          <div style="background:rgba(34,197,94,.06);border:1px solid rgba(34,197,94,.12);border-radius:7px;padding:7px 10px;font-size:10px;color:var(--green);margin-top:8px;line-height:1.5">
+            💡 <b>FCF</b> = cash généré après investissements. C'est l'argent réel disponible pour dividendes, rachats d'actions ou désendettement.
+          </div>
+        </div>
+      </div>
+      <div class="g2">
         <div class="gc"><div class="gc-t">Ratios clés</div><div id="ratiosList"></div></div>
         <div class="gc"><div class="gc-t">Verdict complet</div><div id="exVerdict" style="font-size:12px;color:var(--light);line-height:1.65"></div></div>
       </div>
@@ -652,7 +660,7 @@ button{font-family:var(--font);cursor:pointer}
               <span style="font-size:18px;font-weight:700;font-family:var(--mono);color:var(--blue)" id="jpFinalEx">—</span>
             </div>
             <div style="display:flex;justify-content:space-between;align-items:center">
-              <span style="font-size:11px;color:var(--muted)">Marge de sécurité (-25%)</span>
+              <span style="font-size:11px;color:var(--muted)">Marge de sécurité (-5%)</span>
               <span style="font-size:14px;font-weight:700;font-family:var(--mono);color:var(--green)" id="jpSafetyEx">—</span>
             </div>
           </div>
@@ -964,12 +972,8 @@ async function openStock(ticker,name,logo){
   curStock={t:ticker,n:name,l:logo||ticker.substring(0,2)};
   analysisData=null;wiPerfs={};
 
-  document.getElementById('stockView').style.display = 'block';
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
-      document.getElementById('stockView').classList.add('active');
-    });
-  });
+  document.getElementById('homeView').classList.remove('active');
+  document.getElementById('stockView').classList.add('active');
   window.scrollTo(0,0);
 
   setMode('simple');resetUI();
@@ -1151,6 +1155,8 @@ function renderExpert(d,q){
   if(d.bnaHistory)drawLine('bnaChart',d.bnaHistory.labels,d.bnaHistory.data,'BNA','#22c55e');
   if(d.divHistory)drawLine('divChart',d.divHistory.labels,d.divHistory.data,'Div.','#fbbf24');
   if(d.debtHistory)drawBar('debtChart',d.debtHistory.labels,d.debtHistory.data,'Dette','#f87171');
+  if(d.roicHistory)drawLine('roicChart',d.roicHistory.labels,d.roicHistory.data,'ROIC %','#a78bfa');
+  if(d.fcfAbsHistory)drawBar('fcfAbsChart',d.fcfAbsHistory.labels,d.fcfAbsHistory.data,`FCF (${d.fcfAbsHistory.unit||'M'})','#22c55e');
   document.getElementById('ratiosList').innerHTML=(d.ratios||[]).map(r=>`
     <div class="ratio-r"><span class="ratio-lb">${r.l}</span><span class="ratio-vl c-${r.c||'white'}">${r.v}</span></div>`).join('');
   document.getElementById('exVerdict').innerHTML=d.verdict||'';
@@ -1173,6 +1179,7 @@ function renderExpert(d,q){
   if(d.fcfYieldHistory)drawLine('fcfChart',d.fcfYieldHistory.labels,d.fcfYieldHistory.data,'FCF Yield %','#22c55e');
 
   // Juste Prix Expert
+  const jp=d.justePrice;
   if(jp&&jp.final>0){
     document.getElementById('jpBaseEx').textContent=sym+jp.base.toFixed(2);
     document.getElementById('jpBaseLb').textContent=jp.baseLabel||'';
@@ -1342,9 +1349,8 @@ function showExTab(tab,btn){
 // NAVIGATION
 // ══════════════════════════════════════════════════════
 function goHome(){
-  const sv = document.getElementById('stockView');
-  sv.style.transform='translateY(40px)';sv.style.opacity='0';
-  setTimeout(()=>{sv.classList.remove('active');sv.style.transform='';sv.style.opacity='';sv.style.display='none';},350);
+  document.getElementById('stockView').classList.remove('active');
+  document.getElementById('homeView').classList.add('active');
   curStock=null;
   if(pChart){pChart.destroy();pChart=null}
   Object.values(charts).forEach(c=>c.destroy());
