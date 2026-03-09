@@ -24,9 +24,17 @@ a{color:inherit;text-decoration:none}
 button{font-family:var(--font);cursor:pointer}
 
 /* ── VIEWS ── */
-.view{display:none;position:relative;z-index:1}
-.view.active{display:block}
 #homeView{display:block}
+/* ── STOCK VIEW AS FULLSCREEN MODAL ── */
+#stockView{
+  display:none;position:fixed;inset:0;z-index:90;
+  background:var(--bg);overflow-y:auto;
+  transform:translateY(40px);opacity:0;
+  transition:transform .35s cubic-bezier(.16,1,.3,1),opacity .35s ease;
+}
+#stockView.active{
+  display:block;transform:translateY(0);opacity:1;
+}
 
 /* ══ HOME ══════════════════════════════════════════════ */
 .home-wrap{min-height:100vh;display:flex;flex-direction:column}
@@ -956,8 +964,12 @@ async function openStock(ticker,name,logo){
   curStock={t:ticker,n:name,l:logo||ticker.substring(0,2)};
   analysisData=null;wiPerfs={};
 
-  document.getElementById('homeView').classList.remove('active');
-  document.getElementById('stockView').classList.add('active');
+  document.getElementById('stockView').style.display = 'block';
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      document.getElementById('stockView').classList.add('active');
+    });
+  });
   window.scrollTo(0,0);
 
   setMode('simple');resetUI();
@@ -1330,8 +1342,9 @@ function showExTab(tab,btn){
 // NAVIGATION
 // ══════════════════════════════════════════════════════
 function goHome(){
-  document.getElementById('stockView').classList.remove('active');
-  document.getElementById('homeView').classList.add('active');
+  const sv = document.getElementById('stockView');
+  sv.style.transform='translateY(40px)';sv.style.opacity='0';
+  setTimeout(()=>{sv.classList.remove('active');sv.style.transform='';sv.style.opacity='';sv.style.display='none';},350);
   curStock=null;
   if(pChart){pChart.destroy();pChart=null}
   Object.values(charts).forEach(c=>c.destroy());
