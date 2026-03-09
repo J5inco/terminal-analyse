@@ -1156,7 +1156,7 @@ function renderExpert(d,q){
   if(d.divHistory)drawLine('divChart',d.divHistory.labels,d.divHistory.data,'Div.','#fbbf24');
   if(d.debtHistory)drawBar('debtChart',d.debtHistory.labels,d.debtHistory.data,'Dette','#f87171');
   if(d.roicHistory)drawLine('roicChart',d.roicHistory.labels,d.roicHistory.data,'ROIC %','#a78bfa');
-  if(d.fcfAbsHistory)drawBar('fcfAbsChart',d.fcfAbsHistory.labels,d.fcfAbsHistory.data,`FCF (${d.fcfAbsHistory.unit||'M'})','#22c55e');
+  if(d.fcfAbsHistory)drawBar('fcfAbsChart',d.fcfAbsHistory.labels,d.fcfAbsHistory.data,'FCF ('+( d.fcfAbsHistory.unit||'M')+')','#22c55e');
   document.getElementById('ratiosList').innerHTML=(d.ratios||[]).map(r=>`
     <div class="ratio-r"><span class="ratio-lb">${r.l}</span><span class="ratio-vl c-${r.c||'white'}">${r.v}</span></div>`).join('');
   document.getElementById('exVerdict').innerHTML=d.verdict||'';
