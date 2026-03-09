@@ -1,13 +1,18 @@
-{
-  "version": 2,
-  "routes": [
-    { "src": "/api/(.*)", "dest": "/api/$1" },
-    { "src": "/(.*)", "dest": "/public/index.html" }
-  ],
-  "crons": [
-    {
-      "path": "/api/cron-refresh",
-      "schedule": "0 2 1,15 * *"
-    }
-  ]
-}
+name: Refresh Analyses J5
+
+on:
+  schedule:
+    - cron: '0 2 1,15 * *'
+  workflow_dispatch:
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Declencher cron-refresh
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            https://terminal-analyse.vercel.app/api/cron-refresh)
+          echo "Status: $STATUS"
+          [ "$STATUS" = "200" ] || [ "$STATUS" = "202" ] || exit 1
