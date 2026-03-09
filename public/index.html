@@ -814,8 +814,7 @@ function updateAuthUI(){
 }
 async function submitAuth(){
   const email=document.getElementById('authEmail').value.trim();
-  const pwd=document.getElementById('authPassword')||document.getElementById('authPwd');
-  const password=pwd?.value;
+  const password=document.getElementById('authPwd').value;
   if(!email||!password){showToast('Remplis email et mot de passe');return}
   const btn=document.getElementById('authBtn');
   btn.textContent='…';btn.disabled=true;
@@ -912,7 +911,13 @@ async function renderGrid(){
       <div class="scard-price" id="cp-${s.t.replace(/\./g,'_')}">…</div>
       <div class="scard-chg" id="cc-${s.t.replace(/\./g,'_')}"></div>
     </div>`).join('');
-  list.forEach(s=>fetchCardQ(s.t));
+  // Charger les quotes par batch de 6 pour éviter de saturer l'API
+  const batchSize=6;
+  for(let i=0;i<list.length;i+=batchSize){
+    const batch=list.slice(i,i+batchSize);
+    await Promise.all(batch.map(s=>fetchCardQ(s.t)));
+    await new Promise(r=>setTimeout(r,200)); // petite pause entre batches
+  }
 }
 async function fetchCardQ(ticker){
   if(cardQ[ticker]){updateCard(ticker,cardQ[ticker]);return}
