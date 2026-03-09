@@ -1,23 +1,55 @@
-name: Refresh Analyses J5
+name: Manual Refresh / Collect
 
 on:
-  schedule:
-    - cron: '0 2 1,15 * *'
   workflow_dispatch:
+    inputs:
+      endpoint:
+        description: "cron-refresh ou cron-collect"
+        required: true
+        default: "cron-refresh"
+      ticker:
+        description: "Ticker optionnel (ex: AAPL)"
+        required: false
+        default: ""
+      limit:
+        description: "Nombre max de tickers"
+        required: false
+        default: "1"
+      force:
+        description: "Force refresh (true/false)"
+        required: false
+        default: "true"
+      dry_run:
+        description: "Dry run (true/false)"
+        required: false
+        default: "false"
 
 jobs:
-  refresh:
+  call-api:
     runs-on: ubuntu-latest
     steps:
-      - name: Declencher cron-refresh
+      - name: Call Vercel endpoint
         run: |
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
-            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-            https://terminal-analyse.vercel.app/api/cron-refresh)
-          echo "Status: $STATUS"
-          if [ "$STATUS" = "200" ] || [ "$STATUS" = "202" ]; then
-            echo "API request successful."
-            exit 0
-          else
-            echo "API request failed with status $STATUS, but workflow continues."
+          ENDPOINT="${{ github.event.inputs.endpoint }}"
+          TICKER="${{ github.event.inputs.ticker }}"
+          LIMIT="${{ github.event.inputs.limit }}"
+          FORCE="${{ github.event.inputs.force }}"
+          DRY_RUN="${{ github.event.inputs.dry_run }}"
+
+          URL="https://terminal-analyse.vercel.app/api/${ENDPOINT}?limit=${LIMIT}&force=${FORCE}&dryRun=${DRY_RUN}"
+
+          if [ -n "$TICKER" ]; then
+            URL="${URL}&ticker=${TICKER}"
           fi
+
+          echo "Calling: $URL"
+
+          STATUS=$(curl -s -o /tmp/resp.txt -w "%{http_code}" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "$URL")
+
+          echo "Status: $STATUS"
+          echo "Body:"
+          cat /tmp/resp.txt
+
+          [ "$STATUS" = "200" ] || [ "$STATUS" = "202" ] || exit 1
