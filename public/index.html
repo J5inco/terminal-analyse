@@ -27,6 +27,7 @@ button{font-family:var(--font);cursor:pointer}
 .view{display:none;position:relative;z-index:1}
 .view.active{display:block}
 #homeView{display:block}
+#stockView.active{display:flex;flex-direction:column;min-height:100vh}
 
 /* ══ HOME ══════════════════════════════════════════════ */
 .home-wrap{min-height:100vh;display:flex;flex-direction:column}
@@ -972,9 +973,11 @@ async function openStock(ticker,name,logo){
   curStock={t:ticker,n:name,l:logo||ticker.substring(0,2)};
   analysisData=null;wiPerfs={};
 
+  document.getElementById('homeView').style.display='none';
   document.getElementById('homeView').classList.remove('active');
   document.getElementById('stockView').classList.add('active');
-  window.scrollTo(0,0);
+  document.documentElement.scrollTop=0;
+  document.body.scrollTop=0;
 
   setMode('simple');resetUI();
 
@@ -1350,6 +1353,7 @@ function showExTab(tab,btn){
 // ══════════════════════════════════════════════════════
 function goHome(){
   document.getElementById('stockView').classList.remove('active');
+  document.getElementById('homeView').style.display='';
   document.getElementById('homeView').classList.add('active');
   curStock=null;
   if(pChart){pChart.destroy();pChart=null}
