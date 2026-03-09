@@ -123,6 +123,11 @@ dette/FP=${debtToEquity||'N/A'} beta=${beta||'N/A'} caCroiss=${revenueGrowth||'N
 
 QUALITATIF: ${qualitativeContext.slice(0,400)}
 
+DONNÉES HISTORIQUES OBLIGATOIRES (remplis tous les arrays sur 6 ans 2019-2024):
+- bnaHistory.data: BNA en valeur absolue | divHistory.data: dividende/action | debtHistory.data: dette nette en Md
+- roicHistory.data: ROIC en % (ex: 18.5 pour 18.5%) | fcfAbsHistory.data: FCF absolu en M (ex: 2300 pour 2,3Md) + fcfAbsHistory.unit="M€" ou "M$"
+- ca.data/earnings.net/perHistory.data/fcfYieldHistory.data: idem, 6 ans minimum
+
 CALCUL JUSTE PRIX: 1) base DCF/multiples 2) ajustements qualitatifs en % 3) final=base+ajust 4) sécurité=final×0.95 (marge 5%)
 
 RÈGLES: reco selon profil ${profileLabel}+qualitatif. Score 1-10 vs pairs. ~30%ACHETER/40%NEUTRE/30%VENDRE. Si correction>25% depuis plus haut: pas ALLÉGER/VENDRE.
