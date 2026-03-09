@@ -752,7 +752,8 @@ button{font-family:var(--font);cursor:pointer}
 // ══════════════════════════════════════════════════════
 const SUPABASE_URL='https://jijeemakmxiwzlthlhyu.supabase.co';
 const SUPABASE_KEY='sb_publishable_UucGvR9dysQS9NY92UoIcA_x_c9X5KW';
-const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+let sb;
+try{ sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY); }catch(e){ console.warn('Supabase init failed',e); }
 
 // ══════════════════════════════════════════════════════
 // DATA
@@ -818,6 +819,7 @@ async function submitAuth(){
   if(!email||!password){showToast('Remplis email et mot de passe');return}
   const btn=document.getElementById('authBtn');
   btn.textContent='…';btn.disabled=true;
+  if(!sb){showToast('Service temporairement indisponible');btn.disabled=false;return}
   try{
     const {data,error}=authMode==='login'
       ?await sb.auth.signInWithPassword({email,password})
@@ -846,16 +848,18 @@ async function onLogout(){
   document.getElementById('pfBtn').style.display='none';
 }
 
-sb.auth.onAuthStateChange((_,session)=>{
-  if(session?.user)onLogin(session.user);
-  else onLogout();
-});
+try{
+  sb?.auth.onAuthStateChange((_,session)=>{
+    if(session?.user)onLogin(session.user);
+    else onLogout();
+  });
+}catch(e){}
 
 // ══════════════════════════════════════════════════════
 // USER DATA
 // ══════════════════════════════════════════════════════
 async function loadUserData(){
-  if(!user)return;
+  if(!user||!sb)return;
   try{
     const[pfRes,wlRes,hRes]=await Promise.all([
       sb.from('portfolios').select('positions').eq('user_id',user.id).single(),
@@ -872,20 +876,22 @@ async function loadUserData(){
   }catch(e){}
 }
 async function savePortfolio(){
-  if(!user)return;
-  await sb.from('portfolios').upsert({user_id:user.id,positions:portfolio,updated_at:new Date().toISOString()});
+  if(!user||!sb)return;
+  try{ await sb.from('portfolios').upsert({user_id:user.id,positions:portfolio,updated_at:new Date().toISOString()}); }catch(e){}
 }
 async function saveWatchlist(){
-  if(!user)return;
-  await sb.from('watchlists').upsert({user_id:user.id,tickers:watchlist,updated_at:new Date().toISOString()});
+  if(!user||!sb)return;
+  try{ await sb.from('watchlists').upsert({user_id:user.id,tickers:watchlist,updated_at:new Date().toISOString()}); }catch(e){}
 }
 async function saveHistory(ticker,name,reco,target){
-  if(!user)return;
-  const entry={user_id:user.id,ticker,name,reco:reco||null,target:target||null};
-  await sb.from('analysis_history').insert(entry);
-  historyList.unshift({...entry,viewed_at:new Date().toISOString()});
-  historyList=historyList.slice(0,20);
-  renderHist();
+  if(!user||!sb)return;
+  try{
+    const entry={user_id:user.id,ticker,name,reco:reco||null,target:target||null};
+    await sb.from('analysis_history').insert(entry);
+    historyList.unshift({...entry,viewed_at:new Date().toISOString()});
+    historyList=historyList.slice(0,20);
+    renderHist();
+  }catch(e){}
 }
 
 // ══════════════════════════════════════════════════════
@@ -900,7 +906,7 @@ function setMkt(m,btn){
   document.querySelectorAll('.mkt-tab').forEach(b=>b.classList.remove('on'));
   btn.classList.add('on');renderGrid();
 }
-async function renderGrid(){
+function renderGrid(){
   const list=mkt==='cac40'?CAC40:NASDAQ;
   const g=document.getElementById('stockGrid');
   g.innerHTML=list.map(s=>`
@@ -911,20 +917,17 @@ async function renderGrid(){
       <div class="scard-price" id="cp-${s.t.replace(/\./g,'_')}">…</div>
       <div class="scard-chg" id="cc-${s.t.replace(/\./g,'_')}"></div>
     </div>`).join('');
-  // Charger les quotes par batch de 6 pour éviter de saturer l'API
-  const batchSize=6;
-  for(let i=0;i<list.length;i+=batchSize){
-    const batch=list.slice(i,i+batchSize);
-    await Promise.all(batch.map(s=>fetchCardQ(s.t)));
-    await new Promise(r=>setTimeout(r,200)); // petite pause entre batches
-  }
+  // Chargement NON-bloquant : chaque ticker se charge indépendamment
+  list.forEach((s,i)=>setTimeout(()=>fetchCardQ(s.t), i*80));
 }
 async function fetchCardQ(ticker){
   if(cardQ[ticker]){updateCard(ticker,cardQ[ticker]);return}
   try{
-    const d=await fetch(`/api/quote?ticker=${encodeURIComponent(ticker)}`).then(r=>r.json());
+    const ctrl=new AbortController();
+    setTimeout(()=>ctrl.abort(),5000); // timeout 5s par ticker
+    const d=await fetch(`/api/quote?ticker=${encodeURIComponent(ticker)}`,{signal:ctrl.signal}).then(r=>r.json());
     cardQ[ticker]=d;updateCard(ticker,d);
-  }catch(e){}
+  }catch(e){} // silently skip si timeout ou erreur
 }
 function updateCard(ticker,d){
   const id=ticker.replace(/\./g,'_');
@@ -1468,7 +1471,8 @@ function showToast(msg){const t=document.getElementById('toast');t.textContent=m
 // INIT
 // ══════════════════════════════════════════════════════
 const jp=null; // will be set in renderExpert scope
-renderGrid();
+// Init non-bloquant
+try{ renderGrid(); }catch(e){ console.error('renderGrid error',e); }
 </script>
 </body>
 </html>
