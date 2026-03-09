@@ -107,22 +107,8 @@ export default async function handler(req, res) {
     else rangeContext = `Milieu de range (${pos}%, -${corr}% depuis plus haut).`;
   }
 
-  // ── WEB SEARCH QUALITATIF ─────────────────────────────────
-  let qualitativeContext = 'Données qualitatives non disponibles.';
-  try {
-    const searchRes = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'anthropic-beta': 'web-search-2025-03-05' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514', max_tokens: 1000,
-        tools: [{ type: 'web_search_20250305', name: 'web_search' }],
-        messages: [{ role: 'user', content: `Recherche les informations qualitatives récentes sur ${name} (${ticker}). Trouve : 1) Actualités importantes 6 derniers mois, 2) Qualité management/gouvernance, 3) Position concurrentielle et moat, 4) Risques réglementaires/juridiques, 5) Rachats d'actions ou événements capitalistiques, 6) Notation ESG. Réponds en 250 mots max en français. Pour chaque élément, indique l'impact estimé sur la valorisation (+X% ou -X%).` }]
-      })
-    });
-    const searchData = await searchRes.json();
-    const texts = (searchData.content || []).filter(b => b.type === 'text').map(b => b.text).join(' ');
-    if (texts.length > 50) qualitativeContext = texts.slice(0, 1200);
-  } catch(e) { /* web search failed */ }
+  // Qualitatif intégré dans le prompt principal (web search désactivé — limite tokens)
+  const qualitativeContext = 'Utilise tes connaissances sur cette entreprise pour les données qualitatives.';
 
   // ── MAIN PROMPT ───────────────────────────────────────────
   const prompt = `Analyste financier senior. Analyse ${name} (${ticker}), ${isEUR?'Euronext Paris':'NYSE/NASDAQ'}, secteur: ${sector||'N/A'}.
