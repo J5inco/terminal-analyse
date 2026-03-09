@@ -49,7 +49,7 @@ export default async function handler(req, res) {
     const cached = await sbGet(ticker.toUpperCase());
     if (cached) {
       const ageDays = (Date.now() - new Date(cached.updated_at).getTime()) / 86400000;
-      if (ageDays < 7) {
+      if (ageDays < 14) {
         return res.status(200).json({ ...cached.data, _cached: true, _cachedAt: cached.updated_at });
       }
     }
@@ -124,22 +124,22 @@ dette/FP=${debtToEquity||'N/A'} beta=${beta||'N/A'} caCroiss=${revenueGrowth||'N
 QUALITATIF: ${qualitativeContext.slice(0,400)}
 
 DONNÉES HISTORIQUES OBLIGATOIRES (remplis tous les arrays sur 6 ans 2019-2024):
-- bnaHistory.data: BNA en valeur absolue | divHistory.data: dividende/action | debtHistory.data: dette nette en Md
-- roicHistory.data: ROIC en % (ex: 18.5 pour 18.5%) | fcfAbsHistory.data: FCF absolu en M (ex: 2300 pour 2,3Md) + fcfAbsHistory.unit="M€" ou "M$"
-- ca.data/earnings.net/perHistory.data/fcfYieldHistory.data: idem, 6 ans minimum
+- Tous les arrays historiques sur 4 ans (2021-2024): bnaHistory, divHistory, debtHistory, roicHistory(%), fcfAbsHistory(M+unit), ca, earnings.net/margin, perHistory, fcfYieldHistory
+- peers.labels=noms, peers.pe=P/E, peers.ev=EV/EBITDA (fusionnés)
+- segments: pct(%), caRaw(valeurs), labels seulement (pas de champ ca texte)
 
 CALCUL JUSTE PRIX: 1) base DCF/multiples 2) ajustements qualitatifs en % 3) final=base+ajust 4) sécurité=final×0.95 (marge 5%)
 
 RÈGLES: reco selon profil ${profileLabel}+qualitatif. Score 1-10 vs pairs. ~30%ACHETER/40%NEUTRE/30%VENDRE. Si correction>25% depuis plus haut: pas ALLÉGER/VENDRE.
 
 Réponds UNIQUEMENT en JSON valide, sans backticks:
-{"reco":"ACHETER|ACCUMULER|NEUTRE|ALLÉGER|VENDRE","profile":"${profileLabel}","target":"X ${currSym}","upside":"+X%","nextEvent":{"label":"","date":""},"kpis":[{"label":"","val":"","sub":"","color":"teal"}],"ca":{"labels":[],"data":[],"unit":"Md${currSym}"},"earnings":{"labels":[],"net":[],"netUnit":"M${currSym}","margin":[]},"segments":{"labels":[],"pct":[],"ca":[],"caRaw":[],"unit":"M${currSym}"},"peers":{"labels":[],"pe":[]},"peersEv":{"labels":[],"data":[]},"perHistory":{"labels":[],"data":[],"avg":0},"fcfYieldHistory":{"labels":[],"data":[]},"valScore":5,"valLights":[{"label":"","val":"","signal":"green|amber|red"}],"valPosition":[{"label":"","pct":0,"vs":"cheaper|expensive"}],"justePrice":{"base":0,"baseLabel":"","adjustments":[{"label":"","impact":0,"positive":true}],"final":0,"safetyMargin":0,"safetyMarginPct":5,"currentPrice":${priceNum||0},"vsCurrentPct":0,"dcf":{"labels":["2025e","2026e","2027e","2028e","2029e","Val.term."],"data":[],"unit":"M${currSym}"},"qualitativeImpact":""},"expectedReturn":0,"expectedReturnDetail":"","bnaHistory":{"labels":[],"data":[]},"divHistory":{"labels":[],"data":[]},"debtHistory":{"labels":[],"data":[]},"roicHistory":{"labels":["2019","2020","2021","2022","2023","2024"],"data":[]},"fcfAbsHistory":{"labels":["2019","2020","2021","2022","2023","2024"],"data":[],"unit":"M"},"ratios":[{"l":"","v":"","c":"green"}],"qualitative":{"positives":[],"negatives":[],"governance":"","esg":"","moat":""},"news":[{"title":"","summary":"","impact":"positive|neutral|negative","date":""}],"calendar":[{"label":"","date":"","type":"results|dividend|ag"}],"catalysts":[{"icon":"🎯","title":"","text":""}],"risks":[{"warn":false,"title":"","text":""}],"verdict":""}`;
+{"reco":"ACHETER|ACCUMULER|NEUTRE|ALLÉGER|VENDRE","profile":"${profileLabel}","target":"X ${currSym}","upside":"+X%","nextEvent":{"label":"","date":""},"kpis":[{"label":"","val":"","sub":"","color":"teal"},{"label":"","val":"","sub":"","color":"green"},{"label":"","val":"","sub":"","color":"blue"}],"ca":{"labels":["2021","2022","2023","2024"],"data":[],"unit":"Md${currSym}"},"earnings":{"labels":["2021","2022","2023","2024"],"net":[],"netUnit":"M${currSym}","margin":[]},"segments":{"labels":[],"pct":[],"caRaw":[],"unit":"M${currSym}"},"peers":{"labels":[],"pe":[],"ev":[]},"perHistory":{"labels":["2021","2022","2023","2024"],"data":[],"avg":0},"fcfYieldHistory":{"labels":["2021","2022","2023","2024"],"data":[]},"valScore":5,"valLights":[{"label":"","val":"","signal":"green|amber|red"},{"label":"","val":"","signal":"green"},{"label":"","val":"","signal":"amber"},{"label":"","val":"","signal":"red"}],"justePrice":{"base":0,"baseLabel":"","adjustments":[{"label":"","impact":0,"positive":true}],"final":0,"safetyMarginPct":5,"currentPrice":${priceNum||0},"vsCurrentPct":0,"dcf":{"labels":["2025e","2026e","2027e","2028e","Val.term."],"data":[],"unit":"M${currSym}"},"qualitativeImpact":""},"expectedReturn":0,"expectedReturnDetail":"","bnaHistory":{"labels":["2021","2022","2023","2024"],"data":[]},"divHistory":{"labels":["2021","2022","2023","2024"],"data":[]},"debtHistory":{"labels":["2021","2022","2023","2024"],"data":[]},"roicHistory":{"labels":["2021","2022","2023","2024"],"data":[]},"fcfAbsHistory":{"labels":["2021","2022","2023","2024"],"data":[],"unit":"M"},"ratios":[{"l":"","v":"","c":"green"}],"qualitative":{"positives":[],"negatives":[],"governance":"","moat":""},"news":[{"title":"","summary":"","impact":"positive|neutral|negative","date":""},{"title":"","summary":"","impact":"neutral","date":""}],"calendar":[{"label":"","date":"","type":"results|dividend|ag"}],"catalysts":[{"icon":"🎯","title":"","text":""},{"icon":"📈","title":"","text":""}],"risks":[{"warn":false,"title":"","text":""},{"warn":true,"title":"","text":""}],"verdict":""}`;
 
   try {
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01' },
-      body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 5000, messages: [{ role: 'user', content: prompt }] }),
+      body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 3500, messages: [{ role: 'user', content: prompt }] }),
     });
 
     const data = await response.json();
