@@ -1,7 +1,32 @@
 // api/analyze.js — J5 Investment · Cache 7j + Qualitatif + Juste Prix
-import { createClient } from '@supabase/supabase-js';
+// Supabase via REST API directe — aucun import npm requis
+const SB_URL = process.env.SUPABASE_URL;
+const SB_KEY = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_ANON_KEY;
 
-const sb = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+async function sbGet(ticker) {
+  if (!SB_URL || !SB_KEY) return null;
+  try {
+    const r = await fetch(`${SB_URL}/rest/v1/analyses_cache?ticker=eq.${encodeURIComponent(ticker)}&limit=1`, {
+      headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}` }
+    });
+    const arr = await r.json();
+    return arr?.[0] || null;
+  } catch(e) { return null; }
+}
+
+async function sbUpsert(ticker, data) {
+  if (!SB_URL || !SB_KEY) return;
+  try {
+    await fetch(`${SB_URL}/rest/v1/analyses_cache`, {
+      method: 'POST',
+      headers: {
+        'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}`,
+        'Content-Type': 'application/json', 'Prefer': 'resolution=merge-duplicates'
+      },
+      body: JSON.stringify({ ticker: ticker.toUpperCase(), data, updated_at: new Date().toISOString() })
+    });
+  } catch(e) { /* non critique */ }
+}
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -21,16 +46,13 @@ export default async function handler(req, res) {
 
   // ── CHECK CACHE 7 JOURS ───────────────────────────────────
   if (!forceRefresh) {
-    try {
-      const { data: cached } = await sb.from('analyses_cache')
-        .select('data, updated_at').eq('ticker', ticker.toUpperCase()).single();
-      if (cached) {
-        const ageDays = (Date.now() - new Date(cached.updated_at).getTime()) / 86400000;
-        if (ageDays < 7) {
-          return res.status(200).json({ ...cached.data, _cached: true, _cachedAt: cached.updated_at });
-        }
+    const cached = await sbGet(ticker.toUpperCase());
+    if (cached) {
+      const ageDays = (Date.now() - new Date(cached.updated_at).getTime()) / 86400000;
+      if (ageDays < 7) {
+        return res.status(200).json({ ...cached.data, _cached: true, _cachedAt: cached.updated_at });
       }
-    } catch(e) { /* cache miss */ }
+    }
   }
 
   // ── PROFIL DETECTION ─────────────────────────────────────
@@ -253,9 +275,7 @@ JSON STRICT UNIQUEMENT — sans backticks :
     const result = JSON.parse(jsonMatch[0]);
 
     // Store in cache
-    try {
-      await sb.from('analyses_cache').upsert({ ticker: ticker.toUpperCase(), data: result, updated_at: new Date().toISOString() });
-    } catch(e) { /* not critical */ }
+    await sbUpsert(ticker.toUpperCase(), result);
 
     return res.status(200).json(result);
   } catch (err) {
