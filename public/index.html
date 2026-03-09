@@ -1114,7 +1114,7 @@ function renderExpert(d,q){
     <div class="kc"><div class="kc-lb">${k.label}</div><div class="kc-vl c-${k.color||'white'}">${k.val}</div><div class="kc-sb">${k.sub||''}</div></div>`).join('');
 
   // Charts
-  if(d.ca)drawBar('caChart',d.ca.labels,d.ca.data,`CA (${d.ca.unit||''})','#3b82f6');
+  if(d.ca)drawBar('caChart',d.ca.labels,d.ca.data,'CA ('+(d.ca.unit||'')+')','#3b82f6');
   if(d.earnings)drawEarnings('earnChart',d.earnings);
   if(d.segments)drawSegments(d.segments,sym);
 
@@ -1172,7 +1172,7 @@ function renderExpert(d,q){
       </div>`).join('');
     document.getElementById('jpFinalEx').textContent=sym+jp.final.toFixed(2);
     document.getElementById('jpSafetyEx').textContent=sym+jp.safetyMargin.toFixed(2);
-    if(jp.dcf)drawBar('dcfChart',jp.dcf.labels,jp.dcf.data,`Flux (${jp.dcf.unit||''})','#4f8ef7');
+    if(jp.dcf)drawBar('dcfChart',jp.dcf.labels,jp.dcf.data,'Flux ('+(jp.dcf.unit||'')+')','#4f8ef7');
     document.getElementById('jpQualEx').textContent=jp.qualitativeImpact||'';
     document.getElementById('jpReturn').textContent=(d.expectedReturn||'—')+'%';
     document.getElementById('jpReturnDetail').textContent=d.expectedReturnDetail||'';
