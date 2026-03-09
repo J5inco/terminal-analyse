@@ -1099,7 +1099,7 @@ function renderAnalysis(d,q){
     const sym=q.currency==='EUR'?'€':'$';
     document.getElementById('jpCurrent').textContent=sym+(q.priceRaw||0).toFixed(2);
     document.getElementById('jpFinal').textContent=sym+jp.final.toFixed(2);
-    document.getElementById('jpSafety').textContent=sym+jp.safetyMargin.toFixed(2);
+    document.getElementById('jpSafety').textContent=sym+(jp.final*0.95).toFixed(2);
     const vsPct=jp.vsCurrentPct||((jp.final-(q.priceRaw||0))/(q.priceRaw||1)*100);
     document.getElementById('jpVsAct').textContent=(vsPct>=0?'+':'')+vsPct.toFixed(1)+'% vs cours actuel';
     document.getElementById('jpVsAct').style.color=vsPct>=0?'var(--green)':'var(--red)';
@@ -1193,7 +1193,7 @@ function renderExpert(d,q){
         <span class="adj-vl" style="color:${a.positive?'var(--green)':'var(--red)'}">${a.positive?'+':''}${a.impact}%</span>
       </div>`).join('');
     document.getElementById('jpFinalEx').textContent=sym+jp.final.toFixed(2);
-    document.getElementById('jpSafetyEx').textContent=sym+jp.safetyMargin.toFixed(2);
+    document.getElementById('jpSafetyEx').textContent=sym+(jp.final*0.95).toFixed(2);
     if(jp.dcf)drawBar('dcfChart',jp.dcf.labels,jp.dcf.data,'Flux ('+(jp.dcf.unit||'')+')','#4f8ef7');
     document.getElementById('jpQualEx').textContent=jp.qualitativeImpact||'';
     document.getElementById('jpReturn').textContent=(d.expectedReturn||'—')+'%';
@@ -1346,6 +1346,28 @@ function showExTab(tab,btn){
   document.getElementById(`et${tab.charAt(0).toUpperCase()+tab.slice(1)}`).classList.add('on');
   document.querySelectorAll('.ex-tab').forEach(b=>b.classList.remove('on'));
   btn.classList.add('on');
+  // Redraw des graphiques qui nécessitent un canvas visible
+  if(tab==='financials' && analysisData){
+    const d=analysisData;
+    if(d.roicHistory && d.roicHistory.data && d.roicHistory.data.length)
+      drawLine('roicChart',d.roicHistory.labels,d.roicHistory.data,'ROIC %','#a78bfa');
+    if(d.fcfAbsHistory && d.fcfAbsHistory.data && d.fcfAbsHistory.data.length)
+      drawBar('fcfAbsChart',d.fcfAbsHistory.labels,d.fcfAbsHistory.data,'FCF ('+(d.fcfAbsHistory.unit||'M')+')','#22c55e');
+    if(d.bnaHistory)drawLine('bnaChart',d.bnaHistory.labels,d.bnaHistory.data,'BNA','#22c55e');
+    if(d.divHistory)drawLine('divChart',d.divHistory.labels,d.divHistory.data,'Div.','#fbbf24');
+    if(d.debtHistory)drawBar('debtChart',d.debtHistory.labels,d.debtHistory.data,'Dette','#f87171');
+  }
+  if(tab==='valuation' && analysisData){
+    const d=analysisData;
+    if(d.peers)drawBar('peersChart',d.peers.labels,d.peers.pe,'P/E','#4f8ef7');
+    if(d.peersEv)drawBar('peersEvChart',d.peersEv.labels,d.peersEv.data,'EV/EBITDA','#2dd4bf');
+    if(d.perHistory)drawLine('perHistChart',d.perHistory.labels,d.perHistory.data,'P/E','#a78bfa');
+    if(d.fcfYieldHistory)drawLine('fcfChart',d.fcfYieldHistory.labels,d.fcfYieldHistory.data,'FCF Yield %','#22c55e');
+  }
+  if(tab==='justeprix' && analysisData){
+    const d=analysisData;
+    if(d.justePrice&&d.justePrice.dcf)drawBar('dcfChart',d.justePrice.dcf.labels,d.justePrice.dcf.data,'Flux ('+(d.justePrice.dcf.unit||'')+')','#4f8ef7');
+  }
 }
 
 // ══════════════════════════════════════════════════════
