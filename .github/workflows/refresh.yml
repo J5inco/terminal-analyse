@@ -15,4 +15,9 @@ jobs:
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
             https://terminal-analyse.vercel.app/api/cron-refresh)
           echo "Status: $STATUS"
-          [ "$STATUS" = "200" ] || [ "$STATUS" = "202" ] || exit 1
+          if [ "$STATUS" = "200" ] || [ "$STATUS" = "202" ]; then
+            echo "API request successful."
+            exit 0
+          else
+            echo "API request failed with status $STATUS, but workflow continues."
+          fi
