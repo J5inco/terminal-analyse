@@ -1,16 +1,9 @@
-// api/cron-refresh.js
-// Lance un batch Anthropic pour les analyses à rafraîchir
-// et enregistre le batch dans Supabase.
-// Ce fichier NE FAIT PAS l'attente du résultat.
-
 const SB_URL = process.env.SUPABASE_URL;
 const SB_KEY = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_ANON_KEY;
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
 const CRON_SECRET = process.env.CRON_SECRET;
 
-// ── LISTE DES 80 ACTIONS ─────────────────────────────────────────────────────
 const ACTIONS = [
-  // CAC 40
   {t:'MC.PA',n:'LVMH',e:'paris',s:'Consumer Cyclical'},
   {t:'TTE.PA',n:'TotalEnergies',e:'paris',s:'Energy'},
   {t:'SAN.PA',n:'Sanofi',e:'paris',s:'Healthcare'},
@@ -51,7 +44,6 @@ const ACTIONS = [
   {t:'STM.PA',n:'STMicroelectronics',e:'paris',s:'Technology'},
   {t:'LR.PA',n:'Legrand',e:'paris',s:'Industrials'},
   {t:'EDF.PA',n:'EDF',e:'paris',s:'Utilities'},
-  // NASDAQ 100
   {t:'AAPL',n:'Apple',e:'nasdaq',s:'Technology'},
   {t:'MSFT',n:'Microsoft',e:'nasdaq',s:'Technology'},
   {t:'NVDA',n:'Nvidia',e:'nasdaq',s:'Technology'},
@@ -94,7 +86,6 @@ const ACTIONS = [
   {t:'ISRG',n:'Intuitive Surgical',e:'nasdaq',s:'Healthcare'},
 ];
 
-// ── HELPERS SUPABASE ─────────────────────────────────────────────────────────
 async function sbRequest(path, { method = 'GET', body, headers = {} } = {}) {
   const r = await fetch(`${SB_URL}/rest/v1/${path}`, {
     method,
@@ -133,9 +124,7 @@ async function sbGetCache(ticker) {
 async function sbInsertBatch({ batchId, tickers, meta }) {
   await sbRequest('analysis_batches', {
     method: 'POST',
-    headers: {
-      Prefer: 'resolution=merge-duplicates'
-    },
+    headers: { Prefer: 'resolution=merge-duplicates' },
     body: {
       batch_id: batchId,
       status: 'queued',
@@ -147,7 +136,6 @@ async function sbInsertBatch({ batchId, tickers, meta }) {
   });
 }
 
-// ── BUILD PROMPT ─────────────────────────────────────────────────────────────
 function buildPrompt(action) {
   const isEUR = action.e === 'paris';
   const currSym = isEUR ? '€' : '$';
@@ -195,6 +183,14 @@ function parsePositiveInt(v, fallback = null) {
   const n = Number(v);
   if (!Number.isFinite(n) || n <= 0) return fallback;
   return Math.floor(n);
+}
+
+function getAuthToken(req) {
+  const authHeader = req.headers['authorization'] || '';
+  if (authHeader.startsWith('Bearer ')) {
+    return authHeader.slice(7).trim();
+  }
+  return '';
 }
 
 function toAnthropicCustomId(ticker) {
@@ -284,24 +280,24 @@ export default async function handler(req, res) {
 
     const customIdMap = {};
 
-const batchRequests = toRefresh.map(action => {
-  const customId = toAnthropicCustomId(action.t);
-  customIdMap[customId] = action.t;
+    const batchRequests = toRefresh.map(action => {
+      const customId = toAnthropicCustomId(action.t);
+      customIdMap[customId] = action.t;
 
-  return {
-    custom_id: customId,
-    params: {
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 3500,
-      messages: [
-        {
-          role: 'user',
-          content: buildPrompt(action)
+      return {
+        custom_id: customId,
+        params: {
+          model: 'claude-haiku-4-5-20251001',
+          max_tokens: 3500,
+          messages: [
+            {
+              role: 'user',
+              content: buildPrompt(action)
+            }
+          ]
         }
-      ]
-    }
-  };
-});
+      };
+    });
 
     const batchRes = await fetch('https://api.anthropic.com/v1/messages/batches', {
       method: 'POST',
@@ -342,15 +338,15 @@ const batchRequests = toRefresh.map(action => {
     }
 
     await sbInsertBatch({
-  batchId,
-  tickers: toRefresh.map(a => a.t),
-  meta: {
-    count: toRefresh.length,
-    force,
-    ticker: tickerParam || null,
-    customIdMap
-  }
-});
+      batchId,
+      tickers: toRefresh.map(a => a.t),
+      meta: {
+        count: toRefresh.length,
+        force,
+        ticker: tickerParam || null,
+        customIdMap
+      }
+    });
 
     return res.status(202).json({
       message: 'Batch lancé avec succès',
@@ -365,3 +361,4 @@ const batchRequests = toRefresh.map(action => {
     });
   }
 }
+এe code est pourtant bien le nouveau code de cron refresh.js
