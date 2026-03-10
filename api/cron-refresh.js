@@ -197,12 +197,11 @@ function parsePositiveInt(v, fallback = null) {
   return Math.floor(n);
 }
 
-function getAuthToken(req) {
-  const authHeader = req.headers['authorization'] || '';
-  if (authHeader.startsWith('Bearer ')) {
-    return authHeader.slice(7).trim();
-  }
-  return '';
+function toAnthropicCustomId(ticker) {
+  return String(ticker)
+    .toUpperCase()
+    .replace(/[^A-Z0-9_-]/g, '_')
+    .slice(0, 64);
 }
 
 export default async function handler(req, res) {
