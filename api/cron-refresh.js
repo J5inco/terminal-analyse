@@ -299,6 +299,8 @@ export default async function handler(req, res) {
       };
     });
 
+    console.log('DEBUG custom ids:', batchRequests.map(x => x.custom_id));
+
     const batchRes = await fetch('https://api.anthropic.com/v1/messages/batches', {
       method: 'POST',
       headers: {
