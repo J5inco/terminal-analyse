@@ -342,14 +342,15 @@ const batchRequests = toRefresh.map(action => {
     }
 
     await sbInsertBatch({
-      batchId,
-      tickers: toRefresh.map(a => a.t),
-      meta: {
-        count: toRefresh.length,
-        force,
-        ticker: tickerParam || null
-      }
-    });
+  batchId,
+  tickers: toRefresh.map(a => a.t),
+  meta: {
+    count: toRefresh.length,
+    force,
+    ticker: tickerParam || null,
+    customIdMap
+  }
+});
 
     return res.status(202).json({
       message: 'Batch lancé avec succès',
