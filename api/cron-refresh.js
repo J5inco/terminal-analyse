@@ -4,86 +4,86 @@ const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
 const CRON_SECRET = process.env.CRON_SECRET;
 
 const ACTIONS = [
-  {t:'MC.PA',n:'LVMH',e:'paris',s:'Consumer Cyclical'},
-  {t:'TTE.PA',n:'TotalEnergies',e:'paris',s:'Energy'},
-  {t:'SAN.PA',n:'Sanofi',e:'paris',s:'Healthcare'},
-  {t:'AI.PA',n:'Air Liquide',e:'paris',s:'Basic Materials'},
-  {t:'AIR.PA',n:'Airbus',e:'paris',s:'Industrials'},
-  {t:'BNP.PA',n:'BNP Paribas',e:'paris',s:'Financial Services'},
-  {t:'SU.PA',n:'Schneider Electric',e:'paris',s:'Industrials'},
-  {t:'OR.PA',n:'L\'Oréal',e:'paris',s:'Consumer Defensive'},
-  {t:'RI.PA',n:'Pernod Ricard',e:'paris',s:'Consumer Defensive'},
-  {t:'DSY.PA',n:'Dassault Systèmes',e:'paris',s:'Technology'},
-  {t:'ACA.PA',n:'Crédit Agricole',e:'paris',s:'Financial Services'},
-  {t:'GLE.PA',n:'Société Générale',e:'paris',s:'Financial Services'},
-  {t:'KER.PA',n:'Kering',e:'paris',s:'Consumer Cyclical'},
-  {t:'HO.PA',n:'Thales',e:'paris',s:'Industrials'},
-  {t:'CAP.PA',n:'Capgemini',e:'paris',s:'Technology'},
-  {t:'CS.PA',n:'AXA',e:'paris',s:'Financial Services'},
-  {t:'ORA.PA',n:'Orange',e:'paris',s:'Communication Services'},
-  {t:'VIE.PA',n:'Veolia',e:'paris',s:'Utilities'},
-  {t:'DG.PA',n:'Vinci',e:'paris',s:'Industrials'},
-  {t:'EN.PA',n:'Bouygues',e:'paris',s:'Industrials'},
-  {t:'SGO.PA',n:'Saint-Gobain',e:'paris',s:'Basic Materials'},
-  {t:'NG.PA',n:'Safran',e:'paris',s:'Industrials'},
-  {t:'VIV.PA',n:'Vivendi',e:'paris',s:'Communication Services'},
-  {t:'RMS.PA',n:'Hermès',e:'paris',s:'Consumer Cyclical'},
-  {t:'SOP.PA',n:'Sopra Steria',e:'paris',s:'Technology'},
-  {t:'EL.PA',n:'EssilorLuxottica',e:'paris',s:'Healthcare'},
-  {t:'SW.PA',n:'Sodexo',e:'paris',s:'Industrials'},
-  {t:'AKE.PA',n:'Arkema',e:'paris',s:'Basic Materials'},
-  {t:'TCH.PA',n:'Teleperformance',e:'paris',s:'Industrials'},
-  {t:'URW.PA',n:'Unibail-Rodamco',e:'paris',s:'Real Estate'},
-  {t:'ML.PA',n:'Michelin',e:'paris',s:'Consumer Cyclical'},
-  {t:'ENGI.PA',n:'Engie',e:'paris',s:'Utilities'},
-  {t:'RNO.PA',n:'Renault',e:'paris',s:'Consumer Cyclical'},
-  {t:'FR.PA',n:'Valeo',e:'paris',s:'Consumer Cyclical'},
-  {t:'WLN.PA',n:'Worldline',e:'paris',s:'Technology'},
-  {t:'ERF.PA',n:'Eurofins',e:'paris',s:'Healthcare'},
-  {t:'PUB.PA',n:'Publicis',e:'paris',s:'Communication Services'},
-  {t:'STM.PA',n:'STMicroelectronics',e:'paris',s:'Technology'},
-  {t:'LR.PA',n:'Legrand',e:'paris',s:'Industrials'},
-  {t:'EDF.PA',n:'EDF',e:'paris',s:'Utilities'},
-  {t:'AAPL',n:'Apple',e:'nasdaq',s:'Technology'},
-  {t:'MSFT',n:'Microsoft',e:'nasdaq',s:'Technology'},
-  {t:'NVDA',n:'Nvidia',e:'nasdaq',s:'Technology'},
-  {t:'AMZN',n:'Amazon',e:'nasdaq',s:'Consumer Cyclical'},
-  {t:'GOOGL',n:'Alphabet',e:'nasdaq',s:'Communication Services'},
-  {t:'META',n:'Meta Platforms',e:'nasdaq',s:'Communication Services'},
-  {t:'TSLA',n:'Tesla',e:'nasdaq',s:'Consumer Cyclical'},
-  {t:'AVGO',n:'Broadcom',e:'nasdaq',s:'Technology'},
-  {t:'COST',n:'Costco',e:'nasdaq',s:'Consumer Defensive'},
-  {t:'ASML',n:'ASML',e:'nasdaq',s:'Technology'},
-  {t:'NFLX',n:'Netflix',e:'nasdaq',s:'Communication Services'},
-  {t:'AZN',n:'AstraZeneca',e:'nasdaq',s:'Healthcare'},
-  {t:'AMD',n:'AMD',e:'nasdaq',s:'Technology'},
-  {t:'QCOM',n:'Qualcomm',e:'nasdaq',s:'Technology'},
-  {t:'INTC',n:'Intel',e:'nasdaq',s:'Technology'},
-  {t:'INTU',n:'Intuit',e:'nasdaq',s:'Technology'},
-  {t:'AMAT',n:'Applied Materials',e:'nasdaq',s:'Technology'},
-  {t:'MU',n:'Micron',e:'nasdaq',s:'Technology'},
-  {t:'LRCX',n:'Lam Research',e:'nasdaq',s:'Technology'},
-  {t:'ADI',n:'Analog Devices',e:'nasdaq',s:'Technology'},
-  {t:'PANW',n:'Palo Alto Networks',e:'nasdaq',s:'Technology'},
-  {t:'KLAC',n:'KLA Corp',e:'nasdaq',s:'Technology'},
-  {t:'MRVL',n:'Marvell Technology',e:'nasdaq',s:'Technology'},
-  {t:'SNPS',n:'Synopsys',e:'nasdaq',s:'Technology'},
-  {t:'CDNS',n:'Cadence Design',e:'nasdaq',s:'Technology'},
-  {t:'CRWD',n:'CrowdStrike',e:'nasdaq',s:'Technology'},
-  {t:'ABNB',n:'Airbnb',e:'nasdaq',s:'Consumer Cyclical'},
-  {t:'ZS',n:'Zscaler',e:'nasdaq',s:'Technology'},
-  {t:'DDOG',n:'Datadog',e:'nasdaq',s:'Technology'},
-  {t:'TTD',n:'The Trade Desk',e:'nasdaq',s:'Technology'},
-  {t:'TEAM',n:'Atlassian',e:'nasdaq',s:'Technology'},
-  {t:'WDAY',n:'Workday',e:'nasdaq',s:'Technology'},
-  {t:'ADSK',n:'Autodesk',e:'nasdaq',s:'Technology'},
-  {t:'GILD',n:'Gilead Sciences',e:'nasdaq',s:'Healthcare'},
-  {t:'AMGN',n:'Amgen',e:'nasdaq',s:'Healthcare'},
-  {t:'VRTX',n:'Vertex Pharma',e:'nasdaq',s:'Healthcare'},
-  {t:'REGN',n:'Regeneron',e:'nasdaq',s:'Healthcare'},
-  {t:'IDXX',n:'Idexx Laboratories',e:'nasdaq',s:'Healthcare'},
-  {t:'ZTS',n:'Zoetis',e:'nasdaq',s:'Healthcare'},
-  {t:'ISRG',n:'Intuitive Surgical',e:'nasdaq',s:'Healthcare'},
+  { t: 'MC.PA', n: 'LVMH', e: 'paris', s: 'Consumer Cyclical' },
+  { t: 'TTE.PA', n: 'TotalEnergies', e: 'paris', s: 'Energy' },
+  { t: 'SAN.PA', n: 'Sanofi', e: 'paris', s: 'Healthcare' },
+  { t: 'AI.PA', n: 'Air Liquide', e: 'paris', s: 'Basic Materials' },
+  { t: 'AIR.PA', n: 'Airbus', e: 'paris', s: 'Industrials' },
+  { t: 'BNP.PA', n: 'BNP Paribas', e: 'paris', s: 'Financial Services' },
+  { t: 'SU.PA', n: 'Schneider Electric', e: 'paris', s: 'Industrials' },
+  { t: 'OR.PA', n: "L'Oréal", e: 'paris', s: 'Consumer Defensive' },
+  { t: 'RI.PA', n: 'Pernod Ricard', e: 'paris', s: 'Consumer Defensive' },
+  { t: 'DSY.PA', n: 'Dassault Systèmes', e: 'paris', s: 'Technology' },
+  { t: 'ACA.PA', n: 'Crédit Agricole', e: 'paris', s: 'Financial Services' },
+  { t: 'GLE.PA', n: 'Société Générale', e: 'paris', s: 'Financial Services' },
+  { t: 'KER.PA', n: 'Kering', e: 'paris', s: 'Consumer Cyclical' },
+  { t: 'HO.PA', n: 'Thales', e: 'paris', s: 'Industrials' },
+  { t: 'CAP.PA', n: 'Capgemini', e: 'paris', s: 'Technology' },
+  { t: 'CS.PA', n: 'AXA', e: 'paris', s: 'Financial Services' },
+  { t: 'ORA.PA', n: 'Orange', e: 'paris', s: 'Communication Services' },
+  { t: 'VIE.PA', n: 'Veolia', e: 'paris', s: 'Utilities' },
+  { t: 'DG.PA', n: 'Vinci', e: 'paris', s: 'Industrials' },
+  { t: 'EN.PA', n: 'Bouygues', e: 'paris', s: 'Industrials' },
+  { t: 'SGO.PA', n: 'Saint-Gobain', e: 'paris', s: 'Basic Materials' },
+  { t: 'NG.PA', n: 'Safran', e: 'paris', s: 'Industrials' },
+  { t: 'VIV.PA', n: 'Vivendi', e: 'paris', s: 'Communication Services' },
+  { t: 'RMS.PA', n: 'Hermès', e: 'paris', s: 'Consumer Cyclical' },
+  { t: 'SOP.PA', n: 'Sopra Steria', e: 'paris', s: 'Technology' },
+  { t: 'EL.PA', n: 'EssilorLuxottica', e: 'paris', s: 'Healthcare' },
+  { t: 'SW.PA', n: 'Sodexo', e: 'paris', s: 'Industrials' },
+  { t: 'AKE.PA', n: 'Arkema', e: 'paris', s: 'Basic Materials' },
+  { t: 'TCH.PA', n: 'Teleperformance', e: 'paris', s: 'Industrials' },
+  { t: 'URW.PA', n: 'Unibail-Rodamco', e: 'paris', s: 'Real Estate' },
+  { t: 'ML.PA', n: 'Michelin', e: 'paris', s: 'Consumer Cyclical' },
+  { t: 'ENGI.PA', n: 'Engie', e: 'paris', s: 'Utilities' },
+  { t: 'RNO.PA', n: 'Renault', e: 'paris', s: 'Consumer Cyclical' },
+  { t: 'FR.PA', n: 'Valeo', e: 'paris', s: 'Consumer Cyclical' },
+  { t: 'WLN.PA', n: 'Worldline', e: 'paris', s: 'Technology' },
+  { t: 'ERF.PA', n: 'Eurofins', e: 'paris', s: 'Healthcare' },
+  { t: 'PUB.PA', n: 'Publicis', e: 'paris', s: 'Communication Services' },
+  { t: 'STM.PA', n: 'STMicroelectronics', e: 'paris', s: 'Technology' },
+  { t: 'LR.PA', n: 'Legrand', e: 'paris', s: 'Industrials' },
+  { t: 'EDF.PA', n: 'EDF', e: 'paris', s: 'Utilities' },
+  { t: 'AAPL', n: 'Apple', e: 'nasdaq', s: 'Technology' },
+  { t: 'MSFT', n: 'Microsoft', e: 'nasdaq', s: 'Technology' },
+  { t: 'NVDA', n: 'Nvidia', e: 'nasdaq', s: 'Technology' },
+  { t: 'AMZN', n: 'Amazon', e: 'nasdaq', s: 'Consumer Cyclical' },
+  { t: 'GOOGL', n: 'Alphabet', e: 'nasdaq', s: 'Communication Services' },
+  { t: 'META', n: 'Meta Platforms', e: 'nasdaq', s: 'Communication Services' },
+  { t: 'TSLA', n: 'Tesla', e: 'nasdaq', s: 'Consumer Cyclical' },
+  { t: 'AVGO', n: 'Broadcom', e: 'nasdaq', s: 'Technology' },
+  { t: 'COST', n: 'Costco', e: 'nasdaq', s: 'Consumer Defensive' },
+  { t: 'ASML', n: 'ASML', e: 'nasdaq', s: 'Technology' },
+  { t: 'NFLX', n: 'Netflix', e: 'nasdaq', s: 'Communication Services' },
+  { t: 'AZN', n: 'AstraZeneca', e: 'nasdaq', s: 'Healthcare' },
+  { t: 'AMD', n: 'AMD', e: 'nasdaq', s: 'Technology' },
+  { t: 'QCOM', n: 'Qualcomm', e: 'nasdaq', s: 'Technology' },
+  { t: 'INTC', n: 'Intel', e: 'nasdaq', s: 'Technology' },
+  { t: 'INTU', n: 'Intuit', e: 'nasdaq', s: 'Technology' },
+  { t: 'AMAT', n: 'Applied Materials', e: 'nasdaq', s: 'Technology' },
+  { t: 'MU', n: 'Micron', e: 'nasdaq', s: 'Technology' },
+  { t: 'LRCX', n: 'Lam Research', e: 'nasdaq', s: 'Technology' },
+  { t: 'ADI', n: 'Analog Devices', e: 'nasdaq', s: 'Technology' },
+  { t: 'PANW', n: 'Palo Alto Networks', e: 'nasdaq', s: 'Technology' },
+  { t: 'KLAC', n: 'KLA Corp', e: 'nasdaq', s: 'Technology' },
+  { t: 'MRVL', n: 'Marvell Technology', e: 'nasdaq', s: 'Technology' },
+  { t: 'SNPS', n: 'Synopsys', e: 'nasdaq', s: 'Technology' },
+  { t: 'CDNS', n: 'Cadence Design', e: 'nasdaq', s: 'Technology' },
+  { t: 'CRWD', n: 'CrowdStrike', e: 'nasdaq', s: 'Technology' },
+  { t: 'ABNB', n: 'Airbnb', e: 'nasdaq', s: 'Consumer Cyclical' },
+  { t: 'ZS', n: 'Zscaler', e: 'nasdaq', s: 'Technology' },
+  { t: 'DDOG', n: 'Datadog', e: 'nasdaq', s: 'Technology' },
+  { t: 'TTD', n: 'The Trade Desk', e: 'nasdaq', s: 'Technology' },
+  { t: 'TEAM', n: 'Atlassian', e: 'nasdaq', s: 'Technology' },
+  { t: 'WDAY', n: 'Workday', e: 'nasdaq', s: 'Technology' },
+  { t: 'ADSK', n: 'Autodesk', e: 'nasdaq', s: 'Technology' },
+  { t: 'GILD', n: 'Gilead Sciences', e: 'nasdaq', s: 'Healthcare' },
+  { t: 'AMGN', n: 'Amgen', e: 'nasdaq', s: 'Healthcare' },
+  { t: 'VRTX', n: 'Vertex Pharma', e: 'nasdaq', s: 'Healthcare' },
+  { t: 'REGN', n: 'Regeneron', e: 'nasdaq', s: 'Healthcare' },
+  { t: 'IDXX', n: 'Idexx Laboratories', e: 'nasdaq', s: 'Healthcare' },
+  { t: 'ZTS', n: 'Zoetis', e: 'nasdaq', s: 'Healthcare' },
+  { t: 'ISRG', n: 'Intuitive Surgical', e: 'nasdaq', s: 'Healthcare' }
 ];
 
 async function sbRequest(path, { method = 'GET', body, headers = {} } = {}) {
@@ -124,7 +124,9 @@ async function sbGetCache(ticker) {
 async function sbInsertBatch({ batchId, tickers, meta }) {
   await sbRequest('analysis_batches', {
     method: 'POST',
-    headers: { Prefer: 'resolution=merge-duplicates' },
+    headers: {
+      Prefer: 'resolution=merge-duplicates'
+    },
     body: {
       batch_id: batchId,
       status: 'queued',
@@ -140,31 +142,42 @@ function buildPrompt(action) {
   const isEUR = action.e === 'paris';
   const currSym = isEUR ? '€' : '$';
   const sectorLow = (action.s || '').toLowerCase();
-  const isGrowth = ['technology','tech','software','cloud','semiconductor','consumer cyclical'].some(s => sectorLow.includes(s));
-  const isPharma = ['pharmaceutical','biotech','healthcare','pharma'].some(s => sectorLow.includes(s));
-  const isCyclical = !isGrowth && ['energy','oil','mining','steel','automotive','construction','basic materials'].some(s => sectorLow.includes(s));
-  const isValue = !isGrowth && !isPharma && !isCyclical;
 
-  let profileLabel, profileInstructions, primaryMetrics, penalizedMetrics;
+  const isGrowth = ['technology', 'tech', 'software', 'cloud', 'semiconductor', 'consumer cyclical']
+    .some(s => sectorLow.includes(s));
+  const isPharma = ['pharmaceutical', 'biotech', 'healthcare', 'pharma']
+    .some(s => sectorLow.includes(s));
+  const isCyclical = !isGrowth && ['energy', 'oil', 'mining', 'steel', 'automotive', 'construction', 'basic materials']
+    .some(s => sectorLow.includes(s));
+
+  let profileLabel;
+  let profileInstructions;
+  let primaryMetrics;
+  let penalizedMetrics;
+
   if (isGrowth) {
-    profileLabel = 'CROISSANCE'; primaryMetrics = 'EV/Revenue, PEG, croissance CA';
+    profileLabel = 'CROISSANCE';
+    primaryMetrics = 'EV/Revenue, PEG, croissance CA';
     penalizedMetrics = 'NE PAS pénaliser P/E élevé si croissance >15%';
     profileInstructions = 'EV/Revenue<5x+croissance>20%=attractif';
   } else if (isPharma) {
-    profileLabel = 'PHARMA'; primaryMetrics = 'Pipeline, P/FCF, R&D/CA';
+    profileLabel = 'PHARMA';
+    primaryMetrics = 'Pipeline, P/FCF, R&D/CA';
     penalizedMetrics = 'NE PAS utiliser P/E principal';
     profileInstructions = 'Pipeline phase3=prime. P/FCF<15x=attractif';
   } else if (isCyclical) {
-    profileLabel = 'CYCLIQUE'; primaryMetrics = 'P/B, EV/EBITDA normalisé, FCF';
+    profileLabel = 'CYCLIQUE';
+    primaryMetrics = 'P/B, EV/EBITDA normalisé, FCF';
     penalizedMetrics = 'NE PAS utiliser P/E au pic cycle';
     profileInstructions = 'Bas cycle→prime redressement. P/B<1=opportunité';
   } else {
-    profileLabel = 'VALUE'; primaryMetrics = 'P/E, P/B, dividende, ROE, ROIC';
+    profileLabel = 'VALUE';
+    primaryMetrics = 'P/E, P/B, dividende, ROE, ROIC';
     penalizedMetrics = 'Pénaliser P/E>20x';
     profileInstructions = 'P/E<médiane+ROE stable=attractif. Div>3%+payout<60%=soutenable';
   }
 
-  return `Analyste financier senior. Analyse ${action.n} (${action.t}), ${isEUR?'Euronext Paris':'NYSE/NASDAQ'}, secteur: ${action.s}.
+  return `Analyste financier senior. Analyse ${action.n} (${action.t}), ${isEUR ? 'Euronext Paris' : 'NYSE/NASDAQ'}, secteur: ${action.s}.
 PROFIL: ${profileLabel} — ${profileInstructions}
 MÉTRIQUES: ${primaryMetrics} | RÈGLE: ${penalizedMetrics}
 Utilise tes connaissances sur cette entreprise pour les données financières.
@@ -261,18 +274,18 @@ export default async function handler(req, res) {
       .map(({ action }) => action);
 
     if (dryRun) {
-  return res.status(200).json({
-    mode: 'dryRun',
-    selected: selected.length,
-    queued: toRefresh.length,
-    force,
-    tickers: toRefresh.map(a => a.t),
-    debugCustomIds: toRefresh.map(a => ({
-      ticker: a.t,
-      customId: toAnthropicCustomId(a.t)
-    }))
-  });
-}
+      return res.status(200).json({
+        mode: 'dryRun',
+        selected: selected.length,
+        queued: toRefresh.length,
+        force,
+        tickers: toRefresh.map(a => a.t),
+        debugCustomIds: toRefresh.map(a => ({
+          ticker: a.t,
+          customId: toAnthropicCustomId(a.t)
+        }))
+      });
+    }
 
     if (toRefresh.length === 0) {
       return res.status(200).json({
@@ -302,8 +315,6 @@ export default async function handler(req, res) {
         }
       };
     });
-
-    console.log('DEBUG custom ids:', batchRequests.map(x => x.custom_id));
 
     const batchRes = await fetch('https://api.anthropic.com/v1/messages/batches', {
       method: 'POST',
@@ -367,4 +378,3 @@ export default async function handler(req, res) {
     });
   }
 }
-এe code est pourtant bien le nouveau code de cron refresh.js
