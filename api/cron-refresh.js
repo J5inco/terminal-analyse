@@ -282,19 +282,26 @@ export default async function handler(req, res) {
       });
     }
 
-    const batchRequests = toRefresh.map(action => ({
-      custom_id: action.t,
-      params: {
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 3500,
-        messages: [
-          {
-            role: 'user',
-            content: buildPrompt(action)
-          }
-        ]
-      }
-    }));
+    const customIdMap = {};
+
+const batchRequests = toRefresh.map(action => {
+  const customId = toAnthropicCustomId(action.t);
+  customIdMap[customId] = action.t;
+
+  return {
+    custom_id: customId,
+    params: {
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 3500,
+      messages: [
+        {
+          role: 'user',
+          content: buildPrompt(action)
+        }
+      ]
+    }
+  };
+});
 
     const batchRes = await fetch('https://api.anthropic.com/v1/messages/batches', {
       method: 'POST',
