@@ -255,8 +255,11 @@ export default async function handler(req, res) {
           }
 
           const parsed = extractJsonFromAnthropicMessage(item.result.message);
-          await sbUpsertAnalysis(item.custom_id, parsed);
-          saved++;
+const originalTicker =
+  batch?.meta?.customIdMap?.[item.custom_id] || item.custom_id;
+
+await sbUpsertAnalysis(originalTicker, parsed);
+saved++;
         } catch (e) {
           failed++;
         }
