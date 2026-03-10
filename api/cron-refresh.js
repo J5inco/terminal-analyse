@@ -261,14 +261,18 @@ export default async function handler(req, res) {
       .map(({ action }) => action);
 
     if (dryRun) {
-      return res.status(200).json({
-        mode: 'dryRun',
-        selected: selected.length,
-        queued: toRefresh.length,
-        force,
-        tickers: toRefresh.map(a => a.t)
-      });
-    }
+  return res.status(200).json({
+    mode: 'dryRun',
+    selected: selected.length,
+    queued: toRefresh.length,
+    force,
+    tickers: toRefresh.map(a => a.t),
+    debugCustomIds: toRefresh.map(a => ({
+      ticker: a.t,
+      customId: toAnthropicCustomId(a.t)
+    }))
+  });
+}
 
     if (toRefresh.length === 0) {
       return res.status(200).json({
