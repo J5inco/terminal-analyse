@@ -1,6 +1,8 @@
 name: Manual Refresh / Collect
 
 on:
+  schedule:
+    - cron: '0 2 1,15 * *'
   workflow_dispatch:
     inputs:
       endpoint:
@@ -30,26 +32,20 @@ jobs:
     steps:
       - name: Call Vercel endpoint
         run: |
-          ENDPOINT="${{ github.event.inputs.endpoint }}"
-          TICKER="${{ github.event.inputs.ticker }}"
-          LIMIT="${{ github.event.inputs.limit }}"
-          FORCE="${{ github.event.inputs.force }}"
-          DRY_RUN="${{ github.event.inputs.dry_run }}"
-
+          ENDPOINT="${{ github.event.inputs.endpoint || 'cron-refresh' }}"
+          TICKER="${{ github.event.inputs.ticker || '' }}"
+          LIMIT="${{ github.event.inputs.limit || '80' }}"
+          FORCE="${{ github.event.inputs.force || 'true' }}"
+          DRY_RUN="${{ github.event.inputs.dry_run || 'false' }}"
           URL="https://terminal-analyse.vercel.app/api/${ENDPOINT}?limit=${LIMIT}&force=${FORCE}&dryRun=${DRY_RUN}"
-
           if [ -n "$TICKER" ]; then
             URL="${URL}&ticker=${TICKER}"
           fi
-
           echo "Calling: $URL"
-
           STATUS=$(curl -s -o /tmp/resp.txt -w "%{http_code}" \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
             "$URL")
-
           echo "Status: $STATUS"
           echo "Body:"
           cat /tmp/resp.txt
-
           [ "$STATUS" = "200" ] || [ "$STATUS" = "202" ] || exit 1
