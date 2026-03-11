@@ -11,11 +11,11 @@ const ACTIONS = [
   { t: 'AIR.PA', n: 'Airbus', e: 'paris', s: 'Industrials' },
   { t: 'BNP.PA', n: 'BNP Paribas', e: 'paris', s: 'Financial Services' },
   { t: 'SU.PA', n: 'Schneider Electric', e: 'paris', s: 'Industrials' },
-  { t: 'OR.PA', n: "L'Oréal", e: 'paris', s: 'Consumer Defensive' },
+  { t: 'OR.PA', n: "L'Oreal", e: 'paris', s: 'Consumer Defensive' },
   { t: 'RI.PA', n: 'Pernod Ricard', e: 'paris', s: 'Consumer Defensive' },
-  { t: 'DSY.PA', n: 'Dassault Systèmes', e: 'paris', s: 'Technology' },
-  { t: 'ACA.PA', n: 'Crédit Agricole', e: 'paris', s: 'Financial Services' },
-  { t: 'GLE.PA', n: 'Société Générale', e: 'paris', s: 'Financial Services' },
+  { t: 'DSY.PA', n: 'Dassault Systemes', e: 'paris', s: 'Technology' },
+  { t: 'ACA.PA', n: 'Credit Agricole', e: 'paris', s: 'Financial Services' },
+  { t: 'GLE.PA', n: 'Societe Generale', e: 'paris', s: 'Financial Services' },
   { t: 'KER.PA', n: 'Kering', e: 'paris', s: 'Consumer Cyclical' },
   { t: 'HO.PA', n: 'Thales', e: 'paris', s: 'Industrials' },
   { t: 'CAP.PA', n: 'Capgemini', e: 'paris', s: 'Technology' },
@@ -27,7 +27,7 @@ const ACTIONS = [
   { t: 'SGO.PA', n: 'Saint-Gobain', e: 'paris', s: 'Basic Materials' },
   { t: 'NG.PA', n: 'Safran', e: 'paris', s: 'Industrials' },
   { t: 'VIV.PA', n: 'Vivendi', e: 'paris', s: 'Communication Services' },
-  { t: 'RMS.PA', n: 'Hermès', e: 'paris', s: 'Consumer Cyclical' },
+  { t: 'RMS.PA', n: 'Hermes', e: 'paris', s: 'Consumer Cyclical' },
   { t: 'SOP.PA', n: 'Sopra Steria', e: 'paris', s: 'Technology' },
   { t: 'EL.PA', n: 'EssilorLuxottica', e: 'paris', s: 'Healthcare' },
   { t: 'SW.PA', n: 'Sodexo', e: 'paris', s: 'Industrials' },
@@ -97,20 +97,12 @@ async function sbRequest(path, { method = 'GET', body, headers = {} } = {}) {
     },
     body: body ? JSON.stringify(body) : undefined
   });
-
   const text = await r.text();
   let data = null;
-
-  try {
-    data = text ? JSON.parse(text) : null;
-  } catch {
-    data = text;
-  }
-
+  try { data = text ? JSON.parse(text) : null; } catch { data = text; }
   if (!r.ok) {
     throw new Error(`Supabase error ${r.status}: ${typeof data === 'string' ? data : JSON.stringify(data)}`);
   }
-
   return data;
 }
 
@@ -124,9 +116,7 @@ async function sbGetCache(ticker) {
 async function sbInsertBatch({ batchId, tickers, meta }) {
   await sbRequest('analysis_batches', {
     method: 'POST',
-    headers: {
-      Prefer: 'resolution=merge-duplicates'
-    },
+    headers: { Prefer: 'resolution=merge-duplicates' },
     body: {
       batch_id: batchId,
       status: 'queued',
@@ -140,9 +130,8 @@ async function sbInsertBatch({ batchId, tickers, meta }) {
 
 function buildPrompt(action) {
   const isEUR = action.e === 'paris';
-  const currSym = isEUR ? '€' : '$';
+  const currSym = isEUR ? 'EUR' : 'USD';
   const sectorLow = (action.s || '').toLowerCase();
-
   const isGrowth = ['technology', 'tech', 'software', 'cloud', 'semiconductor', 'consumer cyclical']
     .some(s => sectorLow.includes(s));
   const isPharma = ['pharmaceutical', 'biotech', 'healthcare', 'pharma']
@@ -150,15 +139,11 @@ function buildPrompt(action) {
   const isCyclical = !isGrowth && ['energy', 'oil', 'mining', 'steel', 'automotive', 'construction', 'basic materials']
     .some(s => sectorLow.includes(s));
 
-  let profileLabel;
-  let profileInstructions;
-  let primaryMetrics;
-  let penalizedMetrics;
-
+  let profileLabel, profileInstructions, primaryMetrics, penalizedMetrics;
   if (isGrowth) {
     profileLabel = 'CROISSANCE';
     primaryMetrics = 'EV/Revenue, PEG, croissance CA';
-    penalizedMetrics = 'NE PAS pénaliser P/E élevé si croissance >15%';
+    penalizedMetrics = 'NE PAS penaliser P/E eleve si croissance >15%';
     profileInstructions = 'EV/Revenue<5x+croissance>20%=attractif';
   } else if (isPharma) {
     profileLabel = 'PHARMA';
@@ -167,25 +152,17 @@ function buildPrompt(action) {
     profileInstructions = 'Pipeline phase3=prime. P/FCF<15x=attractif';
   } else if (isCyclical) {
     profileLabel = 'CYCLIQUE';
-    primaryMetrics = 'P/B, EV/EBITDA normalisé, FCF';
+    primaryMetrics = 'P/B, EV/EBITDA normalise, FCF';
     penalizedMetrics = 'NE PAS utiliser P/E au pic cycle';
-    profileInstructions = 'Bas cycle→prime redressement. P/B<1=opportunité';
+    profileInstructions = 'Bas cycle=>prime redressement. P/B<1=opportunite';
   } else {
     profileLabel = 'VALUE';
     primaryMetrics = 'P/E, P/B, dividende, ROE, ROIC';
-    penalizedMetrics = 'Pénaliser P/E>20x';
-    profileInstructions = 'P/E<médiane+ROE stable=attractif. Div>3%+payout<60%=soutenable';
+    penalizedMetrics = 'Penaliser P/E>20x';
+    profileInstructions = 'P/E<mediane+ROE stable=attractif. Div>3%+payout<60%=soutenable';
   }
 
-  return `Analyste financier senior. Analyse ${action.n} (${action.t}), ${isEUR ? 'Euronext Paris' : 'NYSE/NASDAQ'}, secteur: ${action.s}.
-PROFIL: ${profileLabel} — ${profileInstructions}
-MÉTRIQUES: ${primaryMetrics} | RÈGLE: ${penalizedMetrics}
-Utilise tes connaissances sur cette entreprise pour les données financières.
-DONNÉES HISTORIQUES (4 ans 2021-2024): bnaHistory, divHistory, debtHistory, roicHistory(%), fcfAbsHistory(M+unit), ca, earnings, perHistory, fcfYieldHistory
-CALCUL JUSTE PRIX: base DCF/multiples → ajustements qualitatifs % → final → sécurité=final×0.95
-RÈGLES: reco selon profil. Score 1-10 vs pairs. ~30%ACHETER/40%NEUTRE/30%VENDRE.
-JSON STRICT sans backticks:
-{"reco":"ACHETER|ACCUMULER|NEUTRE|ALLÉGER|VENDRE","profile":"${profileLabel}","target":"X ${currSym}","upside":"+X%","nextEvent":{"label":"","date":""},"kpis":[{"label":"","val":"","sub":"","color":"teal"},{"label":"","val":"","sub":"","color":"green"},{"label":"","val":"","sub":"","color":"blue"}],"ca":{"labels":["2021","2022","2023","2024"],"data":[],"unit":"Md${currSym}"},"earnings":{"labels":["2021","2022","2023","2024"],"net":[],"netUnit":"M${currSym}","margin":[]},"segments":{"labels":[],"pct":[],"caRaw":[],"unit":"M${currSym}"},"peers":{"labels":[],"pe":[],"ev":[]},"perHistory":{"labels":["2021","2022","2023","2024"],"data":[],"avg":0},"fcfYieldHistory":{"labels":["2021","2022","2023","2024"],"data":[]},"valScore":5,"valLights":[{"label":"","val":"","signal":"green"},{"label":"","val":"","signal":"amber"},{"label":"","val":"","signal":"green"},{"label":"","val":"","signal":"red"}],"justePrice":{"base":0,"baseLabel":"","adjustments":[{"label":"","impact":0,"positive":true}],"final":0,"safetyMarginPct":5,"currentPrice":0,"vsCurrentPct":0,"dcf":{"labels":["2025e","2026e","2027e","2028e","Val.term."],"data":[],"unit":"M${currSym}"},"qualitativeImpact":""},"expectedReturn":0,"expectedReturnDetail":"","bnaHistory":{"labels":["2021","2022","2023","2024"],"data":[]},"divHistory":{"labels":["2021","2022","2023","2024"],"data":[]},"debtHistory":{"labels":["2021","2022","2023","2024"],"data":[]},"roicHistory":{"labels":["2021","2022","2023","2024"],"data":[]},"fcfAbsHistory":{"labels":["2021","2022","2023","2024"],"data":[],"unit":"M"},"ratios":[{"l":"","v":"","c":"green"}],"qualitative":{"positives":[],"negatives":[],"governance":"","moat":""},"news":[{"title":"","summary":"","impact":"positive","date":""},{"title":"","summary":"","impact":"neutral","date":""}],"calendar":[{"label":"","date":"","type":"results"}],"catalysts":[{"icon":"🎯","title":"","text":""},{"icon":"📈","title":"","text":""}],"risks":[{"warn":false,"title":"","text":""},{"warn":true,"title":"","text":""}],"verdict":""}`;
+  return `Analyste financier senior. Analyse ${action.n} (${action.t}), ${isEUR ? 'Euronext Paris' : 'NYSE/NASDAQ'}, secteur: ${action.s}. PROFIL: ${profileLabel} - ${profileInstructions} METRIQUES: ${primaryMetrics} | REGLE: ${penalizedMetrics} Utilise tes connaissances sur cette entreprise pour les donnees financieres. DONNEES HISTORIQUES (4 ans 2021-2024): bnaHistory, divHistory, debtHistory, roicHistory(%), fcfAbsHistory(M+unit), ca, earnings, perHistory, fcfYieldHistory CALCUL JUSTE PRIX: base DCF/multiples -> ajustements qualitatifs % -> final -> securite=final*0.95 REGLES: reco selon profil. Score 1-10 vs pairs. ~30%ACHETER/40%NEUTRE/30%VENDRE. JSON STRICT sans backticks: {"reco":"ACHETER|ACCUMULER|NEUTRE|ALLEGER|VENDRE","profile":"${profileLabel}","target":"X ${currSym}","upside":"+X%","nextEvent":{"label":"","date":""},"kpis":[{"label":"","val":"","sub":"","color":"teal"},{"label":"","val":"","sub":"","color":"green"},{"label":"","val":"","sub":"","color":"blue"}],"ca":{"labels":["2021","2022","2023","2024"],"data":[],"unit":"Md${currSym}"},"earnings":{"labels":["2021","2022","2023","2024"],"net":[],"netUnit":"M${currSym}","margin":[]},"segments":{"labels":[],"pct":[],"caRaw":[],"unit":"M${currSym}"},"peers":{"labels":[],"pe":[],"ev":[]},"perHistory":{"labels":["2021","2022","2023","2024"],"data":[],"avg":0},"fcfYieldHistory":{"labels":["2021","2022","2023","2024"],"data":[]},"valScore":5,"valLights":[{"label":"","val":"","signal":"green"},{"label":"","val":"","signal":"amber"},{"label":"","val":"","signal":"green"},{"label":"","val":"","signal":"red"}],"justePrice":{"base":0,"baseLabel":"","adjustments":[{"label":"","impact":0,"positive":true}],"final":0,"safetyMarginPct":5,"currentPrice":0,"vsCurrentPct":0,"dcf":{"labels":["2025e","2026e","2027e","2028e","Val.term."],"data":[],"unit":"M${currSym}"},"qualitativeImpact":""},"expectedReturn":0,"expectedReturnDetail":"","bnaHistory":{"labels":["2021","2022","2023","2024"],"data":[]},"divHistory":{"labels":["2021","2022","2023","2024"],"data":[]},"debtHistory":{"labels":["2021","2022","2023","2024"],"data":[]},"roicHistory":{"labels":["2021","2022","2023","2024"],"data":[]},"fcfAbsHistory":{"labels":["2021","2022","2023","2024"],"data":[],"unit":"M"},"ratios":[{"l":"","v":"","c":"green"}],"qualitative":{"positives":[],"negatives":[],"governance":"","moat":""},"news":[{"title":"","summary":"","impact":"positive","date":""},{"title":"","summary":"","impact":"neutral","date":""}],"calendar":[{"label":"","date":"","type":"results"}],"catalysts":[{"icon":"","title":"","text":""},{"icon":"","title":"","text":""}],"risks":[{"warn":false,"title":"","text":""},{"warn":true,"title":"","text":""}],"verdict":""}`;
 }
 
 function isTrue(v) {
@@ -206,9 +183,11 @@ function getAuthToken(req) {
   return '';
 }
 
+// UNE SEULE definition, retourne une string valide ^[a-zA-Z0-9_-]{1,64}$
 function toAnthropicCustomId(ticker) {
   return String(ticker)
     .toUpperCase()
+    .replace(/\./g, '_')
     .replace(/[^A-Z0-9_-]/g, '_')
     .slice(0, 64);
 }
@@ -241,18 +220,17 @@ export default async function handler(req, res) {
     const force = isTrue(q.force);
     const dryRun = isTrue(q.dryRun);
     const limit = parsePositiveInt(q.limit, null);
+
     const CACHE_DAYS = 14;
     const now = Date.now();
 
     let selected = ACTIONS;
-
     if (tickerParam) {
       selected = ACTIONS.filter(a => a.t.toUpperCase() === tickerParam);
       if (selected.length === 0) {
         return res.status(404).json({ error: `Ticker introuvable: ${tickerParam}` });
       }
     }
-
     if (limit) {
       selected = selected.slice(0, limit);
     }
@@ -288,29 +266,20 @@ export default async function handler(req, res) {
     }
 
     if (toRefresh.length === 0) {
-      return res.status(200).json({
-        message: 'Tout est déjà à jour',
-        queued: 0,
-        force
-      });
+      return res.status(200).json({ message: 'Tout est deja a jour', queued: 0, force });
     }
 
     const customIdMap = {};
-
     const batchRequests = toRefresh.map(action => {
       const customId = toAnthropicCustomId(action.t);
       customIdMap[customId] = action.t;
-
       return {
         custom_id: customId,
         params: {
           model: 'claude-haiku-4-5-20251001',
           max_tokens: 3500,
           messages: [
-            {
-              role: 'user',
-              content: buildPrompt(action)
-            }
+            { role: 'user', content: buildPrompt(action) }
           ]
         }
       };
@@ -324,19 +293,12 @@ export default async function handler(req, res) {
         'anthropic-version': '2023-06-01',
         'anthropic-beta': 'message-batches-2024-09-24'
       },
-      body: JSON.stringify({
-        requests: batchRequests
-      })
+      body: JSON.stringify({ requests: batchRequests })
     });
 
     const batchText = await batchRes.text();
     let batchData = null;
-
-    try {
-      batchData = batchText ? JSON.parse(batchText) : null;
-    } catch {
-      batchData = batchText;
-    }
+    try { batchData = batchText ? JSON.parse(batchText) : null; } catch { batchData = batchText; }
 
     if (!batchRes.ok) {
       return res.status(500).json({
@@ -348,33 +310,24 @@ export default async function handler(req, res) {
 
     const batchId = batchData?.id;
     if (!batchId) {
-      return res.status(500).json({
-        error: 'Anthropic n’a pas renvoyé de batch_id',
-        detail: batchData
-      });
+      return res.status(500).json({ error: 'Anthropic: pas de batch_id recu', detail: batchData });
     }
 
     await sbInsertBatch({
       batchId,
       tickers: toRefresh.map(a => a.t),
-      meta: {
-        count: toRefresh.length,
-        force,
-        ticker: tickerParam || null,
-        customIdMap
-      }
+      meta: { count: toRefresh.length, force, ticker: tickerParam || null, customIdMap }
     });
 
     return res.status(202).json({
-      message: 'Batch lancé avec succès',
+      message: 'Batch lance avec succes',
       batchId,
       queued: toRefresh.length,
       tickers: toRefresh.map(a => a.t)
     });
+
   } catch (err) {
     console.error('cron-refresh error:', err);
-    return res.status(500).json({
-      error: err.message || 'Internal server error'
-    });
+    return res.status(500).json({ error: err.message || 'Internal server error' });
   }
 }
