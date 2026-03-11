@@ -3,7 +3,7 @@ const SB_KEY = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_ANON_KEY
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
 const CRON_SECRET = process.env.CRON_SECRET;
 
-const ACTIONS = [
+const ACTIONS = [ 
   { t: 'MC.PA', n: 'LVMH', e: 'paris', s: 'Consumer Cyclical' },
   { t: 'TTE.PA', n: 'TotalEnergies', e: 'paris', s: 'Energy' },
   { t: 'SAN.PA', n: 'Sanofi', e: 'paris', s: 'Healthcare' },
