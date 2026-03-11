@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Boursinvest · Investir simplement</title>
+<title>J5 · Investir simplement</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=DM+Mono:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -27,7 +27,6 @@ button{font-family:var(--font);cursor:pointer}
 .view{display:none;position:relative;z-index:1}
 .view.active{display:block}
 #homeView{display:block}
-#stockView.active{display:flex;flex-direction:column;min-height:100vh}
 
 /* ══ HOME ══════════════════════════════════════════════ */
 .home-wrap{min-height:100vh;display:flex;flex-direction:column}
@@ -514,7 +513,7 @@ button{font-family:var(--font);cursor:pointer}
         <div class="jp-prices">
           <div class="jp-p"><div class="jp-p-lb">Cours actuel</div><div class="jp-p-vl" id="jpCurrent">—</div></div>
           <div class="jp-p" style="border:1px solid rgba(79,142,247,.2)"><div class="jp-p-lb" style="color:var(--blue)">Juste prix IA</div><div class="jp-p-vl" style="color:var(--blue)" id="jpFinal">—</div><div class="jp-p-ds" id="jpVsAct">—</div></div>
-          <div class="jp-p"><div class="jp-p-lb">Marge de sécurité</div><div class="jp-p-vl" style="color:var(--green)" id="jpSafety">—</div><div class="jp-p-ds">-5% du juste prix</div></div>
+          <div class="jp-p"><div class="jp-p-lb">Marge de sécurité</div><div class="jp-p-vl" style="color:var(--green)" id="jpSafety">—</div><div class="jp-p-ds">-25% du juste prix</div></div>
         </div>
         <div class="jp-gauge" style="margin-bottom:10px"><div class="jp-gauge-fill" id="jpGauge" style="width:50%;background:var(--amber)"></div></div>
         <div style="font-size:10px;color:var(--muted);display:flex;justify-content:space-between;margin-bottom:10px"><span>Très sous-évalué</span><span>Juste prix</span><span>Très surévalué</span></div>
@@ -554,17 +553,6 @@ button{font-family:var(--font);cursor:pointer}
           <div><div class="wr-lb">Valeur aujourd'hui</div><div class="wr-vl" id="wiVal">—</div></div>
           <div class="wr-gn" id="wiGn">—</div>
         </div>
-        <div id="wiDivBlock" style="display:none;margin-top:10px;padding:10px 12px;background:rgba(251,191,36,.06);border:1px solid rgba(251,191,36,.18);border-radius:8px">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-            <span style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em">Dont dividendes perçus</span>
-            <span style="font-size:14px;font-weight:700;font-family:var(--mono);color:#fbbf24" id="wiDivAmt">—</span>
-          </div>
-          <div style="display:flex;justify-content:space-between;align-items:center">
-            <span style="font-size:10px;color:var(--muted)">Plus-value cours seul</span>
-            <span style="font-size:13px;font-weight:600;font-family:var(--mono);color:var(--light)" id="wiPriceOnly">—</span>
-          </div>
-          <div style="margin-top:8px;font-size:9px;color:var(--muted);line-height:1.5" id="wiDivDetail"></div>
-        </div>
       </div>
     </div>
 
@@ -603,22 +591,6 @@ button{font-family:var(--font);cursor:pointer}
         <div class="gc"><div class="gc-t">BNA historique</div><div class="ch160"><canvas id="bnaChart"></canvas></div></div>
         <div class="gc"><div class="gc-t">Dividende / action</div><div class="ch160"><canvas id="divChart"></canvas></div></div>
         <div class="gc"><div class="gc-t">Dette nette</div><div class="ch160"><canvas id="debtChart"></canvas></div></div>
-      </div>
-      <div class="g2">
-        <div class="gc">
-          <div class="gc-t">ROIC historique % <span style="font-size:8px;color:var(--muted);font-family:var(--mono);margin-left:4px">Return on Invested Capital</span></div>
-          <div class="ch160"><canvas id="roicChart"></canvas></div>
-          <div style="background:rgba(167,139,250,.07);border:1px solid rgba(167,139,250,.15);border-radius:7px;padding:7px 10px;font-size:10px;color:var(--purple);margin-top:8px;line-height:1.5">
-            💡 <b>ROIC</b> = résultat opérationnel net / capital investi. Un ROIC &gt; 15% sur 5 ans = entreprise de qualité exceptionnelle (pricing power, moat solide).
-          </div>
-        </div>
-        <div class="gc">
-          <div class="gc-t">Free Cash Flow absolu <span style="font-size:8px;color:var(--muted);font-family:var(--mono);margin-left:4px">Cash réellement généré</span></div>
-          <div class="ch160"><canvas id="fcfAbsChart"></canvas></div>
-          <div style="background:rgba(34,197,94,.06);border:1px solid rgba(34,197,94,.12);border-radius:7px;padding:7px 10px;font-size:10px;color:var(--green);margin-top:8px;line-height:1.5">
-            💡 <b>FCF</b> = cash généré après investissements. C'est l'argent réel disponible pour dividendes, rachats d'actions ou désendettement.
-          </div>
-        </div>
       </div>
       <div class="g2">
         <div class="gc"><div class="gc-t">Ratios clés</div><div id="ratiosList"></div></div>
@@ -672,7 +644,7 @@ button{font-family:var(--font);cursor:pointer}
               <span style="font-size:18px;font-weight:700;font-family:var(--mono);color:var(--blue)" id="jpFinalEx">—</span>
             </div>
             <div style="display:flex;justify-content:space-between;align-items:center">
-              <span style="font-size:11px;color:var(--muted)">Marge de sécurité (-5%)</span>
+              <span style="font-size:11px;color:var(--muted)">Marge de sécurité (-25%)</span>
               <span style="font-size:14px;font-weight:700;font-family:var(--mono);color:var(--green)" id="jpSafetyEx">—</span>
             </div>
           </div>
@@ -780,8 +752,7 @@ button{font-family:var(--font);cursor:pointer}
 // ══════════════════════════════════════════════════════
 const SUPABASE_URL='https://jijeemakmxiwzlthlhyu.supabase.co';
 const SUPABASE_KEY='sb_publishable_UucGvR9dysQS9NY92UoIcA_x_c9X5KW';
-let sb;
-try{ sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY); }catch(e){ console.warn('Supabase init failed',e); }
+const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 
 // ══════════════════════════════════════════════════════
 // DATA
@@ -847,7 +818,6 @@ async function submitAuth(){
   if(!email||!password){showToast('Remplis email et mot de passe');return}
   const btn=document.getElementById('authBtn');
   btn.textContent='…';btn.disabled=true;
-  if(!sb){showToast('Service temporairement indisponible');btn.disabled=false;return}
   try{
     const {data,error}=authMode==='login'
       ?await sb.auth.signInWithPassword({email,password})
@@ -876,18 +846,16 @@ async function onLogout(){
   document.getElementById('pfBtn').style.display='none';
 }
 
-try{
-  sb?.auth.onAuthStateChange((_,session)=>{
-    if(session?.user)onLogin(session.user);
-    else onLogout();
-  });
-}catch(e){}
+sb.auth.onAuthStateChange((_,session)=>{
+  if(session?.user)onLogin(session.user);
+  else onLogout();
+});
 
 // ══════════════════════════════════════════════════════
 // USER DATA
 // ══════════════════════════════════════════════════════
 async function loadUserData(){
-  if(!user||!sb)return;
+  if(!user)return;
   try{
     const[pfRes,wlRes,hRes]=await Promise.all([
       sb.from('portfolios').select('positions').eq('user_id',user.id).single(),
@@ -904,22 +872,20 @@ async function loadUserData(){
   }catch(e){}
 }
 async function savePortfolio(){
-  if(!user||!sb)return;
-  try{ await sb.from('portfolios').upsert({user_id:user.id,positions:portfolio,updated_at:new Date().toISOString()}); }catch(e){}
+  if(!user)return;
+  await sb.from('portfolios').upsert({user_id:user.id,positions:portfolio,updated_at:new Date().toISOString()});
 }
 async function saveWatchlist(){
-  if(!user||!sb)return;
-  try{ await sb.from('watchlists').upsert({user_id:user.id,tickers:watchlist,updated_at:new Date().toISOString()}); }catch(e){}
+  if(!user)return;
+  await sb.from('watchlists').upsert({user_id:user.id,tickers:watchlist,updated_at:new Date().toISOString()});
 }
 async function saveHistory(ticker,name,reco,target){
-  if(!user||!sb)return;
-  try{
-    const entry={user_id:user.id,ticker,name,reco:reco||null,target:target||null};
-    await sb.from('analysis_history').insert(entry);
-    historyList.unshift({...entry,viewed_at:new Date().toISOString()});
-    historyList=historyList.slice(0,20);
-    renderHist();
-  }catch(e){}
+  if(!user)return;
+  const entry={user_id:user.id,ticker,name,reco:reco||null,target:target||null};
+  await sb.from('analysis_history').insert(entry);
+  historyList.unshift({...entry,viewed_at:new Date().toISOString()});
+  historyList=historyList.slice(0,20);
+  renderHist();
 }
 
 // ══════════════════════════════════════════════════════
@@ -934,7 +900,7 @@ function setMkt(m,btn){
   document.querySelectorAll('.mkt-tab').forEach(b=>b.classList.remove('on'));
   btn.classList.add('on');renderGrid();
 }
-function renderGrid(){
+async function renderGrid(){
   const list=mkt==='cac40'?CAC40:NASDAQ;
   const g=document.getElementById('stockGrid');
   g.innerHTML=list.map(s=>`
@@ -945,17 +911,20 @@ function renderGrid(){
       <div class="scard-price" id="cp-${s.t.replace(/\./g,'_')}">…</div>
       <div class="scard-chg" id="cc-${s.t.replace(/\./g,'_')}"></div>
     </div>`).join('');
-  // Chargement NON-bloquant : chaque ticker se charge indépendamment
-  list.forEach((s,i)=>setTimeout(()=>fetchCardQ(s.t), i*80));
+  // Charger les quotes par batch de 6 pour éviter de saturer l'API
+  const batchSize=6;
+  for(let i=0;i<list.length;i+=batchSize){
+    const batch=list.slice(i,i+batchSize);
+    await Promise.all(batch.map(s=>fetchCardQ(s.t)));
+    await new Promise(r=>setTimeout(r,200)); // petite pause entre batches
+  }
 }
 async function fetchCardQ(ticker){
   if(cardQ[ticker]){updateCard(ticker,cardQ[ticker]);return}
   try{
-    const ctrl=new AbortController();
-    setTimeout(()=>ctrl.abort(),5000); // timeout 5s par ticker
-    const d=await fetch(`/api/quote?ticker=${encodeURIComponent(ticker)}`,{signal:ctrl.signal}).then(r=>r.json());
+    const d=await fetch(`/api/quote?ticker=${encodeURIComponent(ticker)}`).then(r=>r.json());
     cardQ[ticker]=d;updateCard(ticker,d);
-  }catch(e){} // silently skip si timeout ou erreur
+  }catch(e){}
 }
 function updateCard(ticker,d){
   const id=ticker.replace(/\./g,'_');
@@ -984,11 +953,9 @@ async function openStock(ticker,name,logo){
   curStock={t:ticker,n:name,l:logo||ticker.substring(0,2)};
   analysisData=null;wiPerfs={};
 
-  document.getElementById('homeView').style.display='none';
   document.getElementById('homeView').classList.remove('active');
   document.getElementById('stockView').classList.add('active');
-  document.documentElement.scrollTop=0;
-  document.body.scrollTop=0;
+  window.scrollTo(0,0);
 
   setMode('simple');resetUI();
 
@@ -1053,7 +1020,7 @@ async function launchAnalysis(q,force=false){
       const ago=Math.floor((Date.now()-new Date(d._cachedAt).getTime())/86400000);
       document.getElementById('cacheBadge').textContent=`Analysé il y a ${ago===0?'aujourd\'hui':ago+'j'}`;
       document.getElementById('cacheBadge').style.display='';
-      document.getElementById('refreshBtn').style.display='';
+      // refresh disabled for public users
     }
 
     renderAnalysis(d,q);
@@ -1110,7 +1077,7 @@ function renderAnalysis(d,q){
     const sym=q.currency==='EUR'?'€':'$';
     document.getElementById('jpCurrent').textContent=sym+(q.priceRaw||0).toFixed(2);
     document.getElementById('jpFinal').textContent=sym+jp.final.toFixed(2);
-    document.getElementById('jpSafety').textContent=sym+(jp.final*0.95).toFixed(2);
+    document.getElementById('jpSafety').textContent=sym+jp.safetyMargin.toFixed(2);
     const vsPct=jp.vsCurrentPct||((jp.final-(q.priceRaw||0))/(q.priceRaw||1)*100);
     document.getElementById('jpVsAct').textContent=(vsPct>=0?'+':'')+vsPct.toFixed(1)+'% vs cours actuel';
     document.getElementById('jpVsAct').style.color=vsPct>=0?'var(--green)':'var(--red)';
@@ -1144,7 +1111,7 @@ function renderExpert(d,q){
     <div class="kc"><div class="kc-lb">${k.label}</div><div class="kc-vl c-${k.color||'white'}">${k.val}</div><div class="kc-sb">${k.sub||''}</div></div>`).join('');
 
   // Charts
-  if(d.ca)drawBar('caChart',d.ca.labels,d.ca.data,'CA ('+(d.ca.unit||'')+')','#3b82f6');
+  if(d.ca)drawBar('caChart',d.ca.labels,d.ca.data,`CA (${d.ca.unit||''})','#3b82f6');
   if(d.earnings)drawEarnings('earnChart',d.earnings);
   if(d.segments)drawSegments(d.segments,sym);
 
@@ -1169,8 +1136,6 @@ function renderExpert(d,q){
   if(d.bnaHistory)drawLine('bnaChart',d.bnaHistory.labels,d.bnaHistory.data,'BNA','#22c55e');
   if(d.divHistory)drawLine('divChart',d.divHistory.labels,d.divHistory.data,'Div.','#fbbf24');
   if(d.debtHistory)drawBar('debtChart',d.debtHistory.labels,d.debtHistory.data,'Dette','#f87171');
-  if(d.roicHistory)drawLine('roicChart',d.roicHistory.labels,d.roicHistory.data,'ROIC %','#a78bfa');
-  if(d.fcfAbsHistory)drawBar('fcfAbsChart',d.fcfAbsHistory.labels,d.fcfAbsHistory.data,'FCF ('+( d.fcfAbsHistory.unit||'M')+')','#22c55e');
   document.getElementById('ratiosList').innerHTML=(d.ratios||[]).map(r=>`
     <div class="ratio-r"><span class="ratio-lb">${r.l}</span><span class="ratio-vl c-${r.c||'white'}">${r.v}</span></div>`).join('');
   document.getElementById('exVerdict').innerHTML=d.verdict||'';
@@ -1193,7 +1158,6 @@ function renderExpert(d,q){
   if(d.fcfYieldHistory)drawLine('fcfChart',d.fcfYieldHistory.labels,d.fcfYieldHistory.data,'FCF Yield %','#22c55e');
 
   // Juste Prix Expert
-  const jp=d.justePrice;
   if(jp&&jp.final>0){
     document.getElementById('jpBaseEx').textContent=sym+jp.base.toFixed(2);
     document.getElementById('jpBaseLb').textContent=jp.baseLabel||'';
@@ -1204,8 +1168,8 @@ function renderExpert(d,q){
         <span class="adj-vl" style="color:${a.positive?'var(--green)':'var(--red)'}">${a.positive?'+':''}${a.impact}%</span>
       </div>`).join('');
     document.getElementById('jpFinalEx').textContent=sym+jp.final.toFixed(2);
-    document.getElementById('jpSafetyEx').textContent=sym+(jp.final*0.95).toFixed(2);
-    if(jp.dcf)drawBar('dcfChart',jp.dcf.labels,jp.dcf.data,'Flux ('+(jp.dcf.unit||'')+')','#4f8ef7');
+    document.getElementById('jpSafetyEx').textContent=sym+jp.safetyMargin.toFixed(2);
+    if(jp.dcf)drawBar('dcfChart',jp.dcf.labels,jp.dcf.data,`Flux (${jp.dcf.unit||''})','#4f8ef7');
     document.getElementById('jpQualEx').textContent=jp.qualitativeImpact||'';
     document.getElementById('jpReturn').textContent=(d.expectedReturn||'—')+'%';
     document.getElementById('jpReturnDetail').textContent=d.expectedReturnDetail||'';
@@ -1271,65 +1235,20 @@ async function recalcWi(){
   const amt=parseFloat(document.getElementById('wiAmt').value)||1000;
   let perf=wiPerfs[period];
   if(perf===undefined){
+    // Load if not cached
     const d=await fetch(`/api/quote?ticker=${encodeURIComponent(curStock?.t||'')}&mode=history&range=${period}`).then(r=>r.json()).catch(()=>({points:[]}));
     const pts=d.points||[];
     if(pts.length>1)perf=(pts[pts.length-1].v-pts[0].v)/pts[0].v;
     else perf=0;
     wiPerfs[period]=perf;
   }
-
+  const now=amt*(1+perf);
+  const gain=now-amt;
   const sym=curQuote?.currency==='EUR'?'€':'$';
-  const years=period==='1y'?1:period==='3y'?3:5;
-
-  // Calcul plus-value cours
-  const priceGain=amt*perf;
-  const valWithPrice=amt+priceGain;
-
-  // Calcul dividendes — on récupère le yield depuis l'analyse IA ou les ratios
-  let divYield=0;
-  if(analysisData){
-    // Chercher dans les ratios d'abord (ex: "3,9%" → 0.039)
-    const divRatio=analysisData.ratios?.find(r=>r.l&&r.l.toLowerCase().includes('div'));
-    if(divRatio){
-      const raw=parseFloat((divRatio.v||'0').replace(',','.').replace('%',''));
-      divYield=raw>1?raw/100:raw;
-    }
-    // Fallback: divYield brut depuis les données envoyées à l'API
-    if(!divYield){
-      const raw=parseFloat(analysisData.divYield||curQuote?.divYield||0);
-      divYield=raw>1?raw/100:raw;
-    }
-  }
-  const divBlock=document.getElementById('wiDivBlock');
-
-  let totalDiv=0;
-  if(divYield>0){
-    // Dividendes réinvestis (intérêts composés) vs non réinvestis
-    const divReinvested=amt*((1+divYield)**years-1); // total si réinvestis
-    const divSimple=amt*divYield*years; // total sans réinvestissement
-    totalDiv=divSimple; // on affiche le simple, plus lisible
-
-    const totalVal=valWithPrice+totalDiv;
-    const totalGain=totalVal-amt;
-
-    document.getElementById('wiVal').textContent=totalVal.toLocaleString('fr-FR',{maximumFractionDigits:0})+sym;
-    const gEl=document.getElementById('wiGn');
-    gEl.textContent=(totalGain>=0?'+':'')+totalGain.toLocaleString('fr-FR',{maximumFractionDigits:0,signDisplay:'always'})+sym+' ('+(totalGain/amt*100).toFixed(1)+'%)';
-    gEl.className='wr-gn '+(totalGain>=0?'pos':'neg');
-
-    document.getElementById('wiDivAmt').textContent='+'+(totalDiv).toLocaleString('fr-FR',{maximumFractionDigits:0})+sym;
-    document.getElementById('wiPriceOnly').textContent=(priceGain>=0?'+':'')+priceGain.toLocaleString('fr-FR',{maximumFractionDigits:0})+sym;
-    document.getElementById('wiDivDetail').textContent=`Yield dividende : ${(divYield*100).toFixed(2)}%/an × ${years} ans = ${(divYield*years*100).toFixed(1)}% de revenus passifs sur ton investissement initial. Dividendes non réinvestis.`;
-    divBlock.style.display='block';
-  } else {
-    // Pas de dividende
-    const gain=valWithPrice-amt;
-    document.getElementById('wiVal').textContent=valWithPrice.toLocaleString('fr-FR',{maximumFractionDigits:0})+sym;
-    const gEl=document.getElementById('wiGn');
-    gEl.textContent=(gain>=0?'+':'')+gain.toLocaleString('fr-FR',{maximumFractionDigits:0})+sym+' ('+(gain/amt*100).toFixed(1)+'%)';
-    gEl.className='wr-gn '+(gain>=0?'pos':'neg');
-    divBlock.style.display='none';
-  }
+  document.getElementById('wiVal').textContent=now.toLocaleString('fr-FR',{maximumFractionDigits:0})+sym;
+  const gEl=document.getElementById('wiGn');
+  gEl.textContent=(gain>=0?'+':'-')+sym+Math.abs(gain).toLocaleString('fr-FR',{maximumFractionDigits:0});
+  gEl.className='wr-gn '+(gain>=0?'pos':'neg');
 }
 
 // ══════════════════════════════════════════════════════
@@ -1402,28 +1321,6 @@ function showExTab(tab,btn){
   document.getElementById(`et${tab.charAt(0).toUpperCase()+tab.slice(1)}`).classList.add('on');
   document.querySelectorAll('.ex-tab').forEach(b=>b.classList.remove('on'));
   btn.classList.add('on');
-  // Redraw des graphiques qui nécessitent un canvas visible
-  if(tab==='financials' && analysisData){
-    const d=analysisData;
-    if(d.roicHistory && d.roicHistory.data && d.roicHistory.data.length)
-      drawLine('roicChart',d.roicHistory.labels,d.roicHistory.data,'ROIC %','#a78bfa');
-    if(d.fcfAbsHistory && d.fcfAbsHistory.data && d.fcfAbsHistory.data.length)
-      drawBar('fcfAbsChart',d.fcfAbsHistory.labels,d.fcfAbsHistory.data,'FCF ('+(d.fcfAbsHistory.unit||'M')+')','#22c55e');
-    if(d.bnaHistory)drawLine('bnaChart',d.bnaHistory.labels,d.bnaHistory.data,'BNA','#22c55e');
-    if(d.divHistory)drawLine('divChart',d.divHistory.labels,d.divHistory.data,'Div.','#fbbf24');
-    if(d.debtHistory)drawBar('debtChart',d.debtHistory.labels,d.debtHistory.data,'Dette','#f87171');
-  }
-  if(tab==='valuation' && analysisData){
-    const d=analysisData;
-    if(d.peers)drawBar('peersChart',d.peers.labels,d.peers.pe,'P/E','#4f8ef7');
-    if(d.peersEv)drawBar('peersEvChart',d.peersEv.labels,d.peersEv.data,'EV/EBITDA','#2dd4bf');
-    if(d.perHistory)drawLine('perHistChart',d.perHistory.labels,d.perHistory.data,'P/E','#a78bfa');
-    if(d.fcfYieldHistory)drawLine('fcfChart',d.fcfYieldHistory.labels,d.fcfYieldHistory.data,'FCF Yield %','#22c55e');
-  }
-  if(tab==='justeprix' && analysisData){
-    const d=analysisData;
-    if(d.justePrice&&d.justePrice.dcf)drawBar('dcfChart',d.justePrice.dcf.labels,d.justePrice.dcf.data,'Flux ('+(d.justePrice.dcf.unit||'')+')','#4f8ef7');
-  }
 }
 
 // ══════════════════════════════════════════════════════
@@ -1431,7 +1328,6 @@ function showExTab(tab,btn){
 // ══════════════════════════════════════════════════════
 function goHome(){
   document.getElementById('stockView').classList.remove('active');
-  document.getElementById('homeView').style.display='';
   document.getElementById('homeView').classList.add('active');
   curStock=null;
   if(pChart){pChart.destroy();pChart=null}
@@ -1572,8 +1468,7 @@ function showToast(msg){const t=document.getElementById('toast');t.textContent=m
 // INIT
 // ══════════════════════════════════════════════════════
 const jp=null; // will be set in renderExpert scope
-// Init non-bloquant
-try{ renderGrid(); }catch(e){ console.error('renderGrid error',e); }
+renderGrid();
 </script>
 </body>
 </html>
