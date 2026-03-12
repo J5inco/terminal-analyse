@@ -554,6 +554,14 @@ button{font-family:var(--font);cursor:pointer}
           <div><div class="wr-lb">Valeur aujourd'hui</div><div class="wr-vl" id="wiVal">—</div></div>
           <div class="wr-gn" id="wiGn">—</div>
         </div>
+        <div class="wi-res" style="margin-top:8px;border-top:1px solid var(--brd);padding-top:10px">
+          <div><div class="wr-lb">Performance cours</div><div class="wr-vl" id="wiPerfPct" style="font-size:13px">—</div></div>
+          <div><div class="wr-lb">Dividendes perçus</div><div class="wr-vl" id="wiDivAmt" style="font-size:13px;color:var(--green)">—</div></div>
+        </div>
+        <div class="wi-res" style="margin-top:6px">
+          <div><div class="wr-lb">Performance totale</div><div class="wr-vl" id="wiTotalPct" style="font-size:13px">—</div></div>
+          <div><div class="wr-lb">Gain total</div><div class="wr-vl" id="wiTotalAmt" style="font-size:13px">—</div></div>
+        </div>
       </div>
     </div>
 
@@ -1270,27 +1278,107 @@ async function loadChart(range,btn){
 }
 
 // ══════════════════════════════════════════════════════
+// YAHOO FINANCIALS (sans IA)
+// ══════════════════════════════════════════════════════
+async function loadYahooFinancials(q){
+  try{
+    const fd=await fetch(`/api/quote?ticker=${encodeURIComponent(curStock.t)}&mode=financials`).then(r=>r.json()).catch(()=>({}));
+    if(fd.error)return;
+    const sym=q.currency==='EUR'?'€':'$';
+    // Render financial charts with Yahoo data
+    if(fd.ca)drawBar('caChart',fd.ca.labels,fd.ca.data,`CA (${fd.ca.unit})`,'#3b82f6');
+    if(fd.earnings)drawEarnings('earnChart',fd.earnings);
+    if(fd.bnaHistory)drawLine('bnaChart',fd.bnaHistory.labels,fd.bnaHistory.data,'BNA','#22c55e');
+    if(fd.divHistory&&fd.divHistory.data.length>0)drawLine('divChart',fd.divHistory.labels,fd.divHistory.data,'Div.','#fbbf24');
+    if(fd.debtHistory)drawBar('debtChart',fd.debtHistory.labels,fd.debtHistory.data,'Dette','#f87171');
+    if(fd.fcfAbsHistory)drawBar('fcfAbsChart',fd.fcfAbsHistory.labels,fd.fcfAbsHistory.data,`FCF (${fd.fcfAbsHistory.unit})`,'#2dd4bf');
+    // Show expert mode tabs even without IA
+    document.getElementById('vContent').style.display='block';
+    document.getElementById('vLoad').style.display='none';
+  }catch(e){}
+}
+
+// ══════════════════════════════════════════════════════
 // WHAT-IF
 // ══════════════════════════════════════════════════════
 async function recalcWi(){
   const period=document.getElementById('wiPeriod').value;
   const amt=parseFloat(document.getElementById('wiAmt').value)||1000;
+  const sym=curQuote?.currency==='EUR'?'€':'$';
+  const ticker=curStock?.t||'';
+
+  // Load price history
   let perf=wiPerfs[period];
   if(perf===undefined){
-    // Load if not cached
-    const d=await fetch(`/api/quote?ticker=${encodeURIComponent(curStock?.t||'')}&mode=history&range=${period}`).then(r=>r.json()).catch(()=>({points:[]}));
+    const d=await fetch(`/api/quote?ticker=${encodeURIComponent(ticker)}&mode=history&range=${period}`).then(r=>r.json()).catch(()=>({points:[]}));
     const pts=d.points||[];
     if(pts.length>1)perf=(pts[pts.length-1].v-pts[0].v)/pts[0].v;
     else perf=0;
     wiPerfs[period]=perf;
   }
-  const now=amt*(1+perf);
-  const gain=now-amt;
-  const sym=curQuote?.currency==='EUR'?'€':'$';
+
+  // Load dividend history (cached per ticker)
+  if(!wiPerfs._divData){
+    try{
+      const fd=await fetch(`/api/quote?ticker=${encodeURIComponent(ticker)}&mode=financials`).then(r=>r.json()).catch(()=>({}));
+      wiPerfs._divData=fd.divHistory||{labels:[],data:[]};
+      wiPerfs._divYield=curQuote?.divYield||0;
+    }catch(e){wiPerfs._divData={labels:[],data:[]}}
+  }
+
+  // Calculate dividends received over the period
+  const periodYears={'1y':1,'3y':3,'5y':5}[period]||1;
+  const divData=wiPerfs._divData;
+  let totalDivPerShare=0;
+  if(divData.data&&divData.data.length>0){
+    // Sum dividends for the relevant years
+    const cutYear=new Date().getFullYear()-periodYears;
+    divData.labels.forEach((yr,i)=>{
+      if(parseInt(yr)>cutYear)totalDivPerShare+=divData.data[i]||0;
+    });
+  } else if(wiPerfs._divYield>0){
+    // Fallback: estimate from yield
+    totalDivPerShare=amt*wiPerfs._divYield*periodYears;
+  }
+
+  // Price performance
+  const priceGain=amt*perf;
+  const now=amt+priceGain;
+
+  // Dividends in money (proportional to investment)
+  const initPrice=curQuote?.priceRaw||1;
+  const shares=amt/initPrice;
+  const divReceived=shares*totalDivPerShare;
+  const totalGain=priceGain+divReceived;
+  const totalPerf=(totalGain/amt)*100;
+
+  // Display
   document.getElementById('wiVal').textContent=now.toLocaleString('fr-FR',{maximumFractionDigits:0})+sym;
+
   const gEl=document.getElementById('wiGn');
-  gEl.textContent=(gain>=0?'+':'-')+sym+Math.abs(gain).toLocaleString('fr-FR',{maximumFractionDigits:0});
-  gEl.className='wr-gn '+(gain>=0?'pos':'neg');
+  gEl.textContent=(priceGain>=0?'+':'-')+sym+Math.abs(priceGain).toLocaleString('fr-FR',{maximumFractionDigits:0});
+  gEl.className='wr-gn '+(priceGain>=0?'pos':'neg');
+
+  // Performance %
+  const perfPct=(perf*100);
+  document.getElementById('wiPerfPct').textContent=(perfPct>=0?'+':'')+perfPct.toFixed(1)+'%';
+  document.getElementById('wiPerfPct').style.color=perfPct>=0?'var(--green)':'var(--red)';
+
+  // Dividends
+  const divEl=document.getElementById('wiDivAmt');
+  if(divReceived>0){
+    divEl.textContent='+'+sym+divReceived.toLocaleString('fr-FR',{maximumFractionDigits:0});
+    divEl.style.color='var(--green)';
+  } else {
+    divEl.textContent='Pas de dividende';
+    divEl.style.color='var(--muted)';
+  }
+
+  // Total
+  document.getElementById('wiTotalPct').textContent=(totalPerf>=0?'+':'')+totalPerf.toFixed(1)+'%';
+  document.getElementById('wiTotalPct').style.color=totalPerf>=0?'var(--green)':'var(--red)';
+  document.getElementById('wiTotalAmt').textContent=(totalGain>=0?'+':'-')+sym+Math.abs(totalGain).toLocaleString('fr-FR',{maximumFractionDigits:0});
+  document.getElementById('wiTotalAmt').style.color=totalGain>=0?'var(--green)':'var(--red)';
 }
 
 // ══════════════════════════════════════════════════════
