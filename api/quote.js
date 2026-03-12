@@ -1,5 +1,5 @@
 // api/quote.js — Yahoo Finance proxy via yahoo-finance2 (cours + fondamentaux + historique + news)
-import yahooFinance from 'yahoo-finance2';
+const yahooFinance = require('yahoo-finance2').default;
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
