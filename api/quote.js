@@ -33,6 +33,97 @@ export default async function handler(req, res) {
     }
   }
 
+  // MODE: FINANCIALS (historical data - BNA, CA, FCF, debt, dividends)
+  if (mode === 'financials') {
+    try {
+      const modules = 'incomeStatementHistory,cashflowStatementHistory,balanceSheetHistory,earningsHistory,dividendHistory';
+      const url = `https://query1.finance.yahoo.com/v11/finance/quoteSummary/${encodeURIComponent(ticker)}?modules=incomeStatementHistory,cashflowStatementHistory,balanceSheetHistory,earningsHistory`;
+      const response = await fetch(url, { headers: HEADERS });
+      const data = await response.json();
+      const s = data?.quoteSummary?.result?.[0];
+      if (!s) return res.status(200).json({ error: 'No financials data' });
+
+      // Income statement history (annual)
+      const incomeStmts = (s.incomeStatementHistory?.incomeStatementHistory || []).slice(0,4).reverse();
+      const cashflows   = (s.cashflowStatementHistory?.cashflowStatements || []).slice(0,4).reverse();
+      const balances    = (s.balanceSheetHistory?.balanceSheetStatements || []).slice(0,4).reverse();
+
+      const labels = incomeStmts.map(i => {
+        const d = new Date((i.endDate?.raw || 0) * 1000);
+        return d.getFullYear().toString();
+      });
+
+      const isEUR = ticker.includes('.PA');
+      const divisor = isEUR ? 1e9 : 1e9; // Md€ or Md$
+      const unit = isEUR ? 'Md€' : 'Md$';
+      const mUnit = isEUR ? 'M€' : 'M$';
+
+      const ca = incomeStmts.map(i => {
+        const v = i.totalRevenue?.raw || 0;
+        return parseFloat((v / divisor).toFixed(2));
+      });
+
+      const netIncome = incomeStmts.map(i => {
+        const v = i.netIncome?.raw || 0;
+        return parseFloat((v / 1e6).toFixed(0));
+      });
+
+      const netMargin = incomeStmts.map((i, idx) => {
+        const rev = i.totalRevenue?.raw || 0;
+        const net = i.netIncome?.raw || 0;
+        return rev > 0 ? parseFloat((net / rev * 100).toFixed(1)) : 0;
+      });
+
+      const eps = (s.earningsHistory?.history || []).slice(0,4).reverse().map(e => 
+        parseFloat((e.epsActual?.raw || 0).toFixed(2))
+      );
+
+      const fcf = cashflows.map(c => {
+        const op = c.totalCashFromOperatingActivities?.raw || 0;
+        const capex = c.capitalExpenditures?.raw || 0;
+        return parseFloat(((op + capex) / 1e6).toFixed(0)); // capex is negative
+      });
+
+      const totalDebt = balances.map(b => {
+        const ltd = b.longTermDebt?.raw || 0;
+        const std = b.shortLongTermDebt?.raw || 0;
+        return parseFloat(((ltd + std) / 1e6).toFixed(0));
+      });
+
+      // Dividend history from v8 chart
+      let divHistory = { labels: [], data: [] };
+      try {
+        const divUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}?interval=1mo&range=5y&events=dividends`;
+        const divRes = await fetch(divUrl, { headers: HEADERS });
+        const divData = await divRes.json();
+        const divs = divData?.chart?.result?.[0]?.events?.dividends || {};
+        // Group by year
+        const byYear = {};
+        Object.values(divs).forEach(d => {
+          const yr = new Date(d.date * 1000).getFullYear().toString();
+          byYear[yr] = (byYear[yr] || 0) + d.amount;
+        });
+        const divYears = Object.keys(byYear).sort().slice(-4);
+        divHistory = {
+          labels: divYears,
+          data: divYears.map(y => parseFloat(byYear[y].toFixed(2)))
+        };
+      } catch(e) {}
+
+      return res.status(200).json({
+        labels,
+        ca: { labels, data: ca, unit },
+        earnings: { labels, net: netIncome, netUnit: mUnit, margin: netMargin },
+        bnaHistory: { labels, data: eps },
+        fcfAbsHistory: { labels, data: fcf, unit: mUnit },
+        debtHistory: { labels, data: totalDebt, unit: mUnit },
+        divHistory,
+      });
+    } catch(err) {
+      return res.status(200).json({ error: err.message });
+    }
+  }
+
   // MODE: NEWS
   if (mode === 'news') {
     try {
