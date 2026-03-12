@@ -3,9 +3,5 @@
   "routes": [
     { "src": "/api/(.*)", "dest": "/api/$1" },
     { "src": "/(.*)", "dest": "/public/index.html" }
-  ],
-  "crons": [
-    { "path": "/api/cron-refresh", "schedule": "0 2 1,15 * *" },
-    { "path": "/api/cron-collect", "schedule": "0 3 1,15 * *" }
   ]
 }
