@@ -64,7 +64,7 @@ export default async function handler(req, res) {
       const crumbParam  = crumb ? `&crumb=${encodeURIComponent(crumb)}` : '';
 
       // Fetch quoteSummary with crumb
-      const summaryUrl = `https://query2.finance.yahoo.com/v11/finance/quoteSummary/${encodeURIComponent(ticker)}?modules=incomeStatementHistory,cashflowStatementHistory,balanceSheetHistory,earningsHistory${crumbParam}`;
+      const summaryUrl = `https://query2.finance.yahoo.com/v10/finance/quoteSummary/${encodeURIComponent(ticker)}?modules=incomeStatementHistory,cashflowStatementHistory,balanceSheetHistory,earningsHistory${crumbParam}`;
       const summaryRes = await fetch(summaryUrl, { headers: authHeaders });
       const summaryData = await summaryRes.json();
       const s = summaryData?.quoteSummary?.result?.[0];
