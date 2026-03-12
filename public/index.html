@@ -479,7 +479,8 @@ button{font-family:var(--font);cursor:pointer}
     </div>
     <div class="bar-right">
       <span class="cache-badge" id="cacheBadge" style="display:none"></span>
-      <button class="refresh-btn" id="refreshBtn" onclick="forceRefresh()" style="display:none" title="Rafraîchir l'analyse">↻ Rafraîchir</button>
+      <button class="refresh-btn" id="launchBtn" onclick="userLaunchAnalysis()" style="display:none" title="Lancer l'analyse IA">⚡ Lancer l'analyse</button>
+      <button class="refresh-btn" id="refreshBtn" onclick="forceRefresh()" style="display:none" title="Rafraîchir l'analyse (admin)">↻ Relancer</button>
       <button class="tbtn" id="wlToggleBtn" onclick="toggleWatchlist()" style="font-size:11px;padding:6px 12px">⭐ Watchlist</button>
       <div class="mode-tog">
         <button class="mode-btn on" id="mSimple" onclick="setMode('simple')">🟢 Simple</button>
@@ -998,6 +999,9 @@ function resetUI(){
 // ══════════════════════════════════════════════════════
 // ANALYSIS
 // ══════════════════════════════════════════════════════
+const ADMIN_EMAIL='enzo.soares10@gmail.com';
+function isAdmin(){return user&&user.email===ADMIN_EMAIL;}
+
 async function launchAnalysis(q,force=false){
   try{
     const body={
@@ -1015,23 +1019,61 @@ async function launchAnalysis(q,force=false){
     if(d.error){document.getElementById('vLoad').innerHTML=`<span style="color:var(--red);font-size:12px">Erreur: ${d.error}</span>`;return}
     analysisData=d;
 
-    // Cache info
-    if(d._cached){
+    const launchBtn=document.getElementById('launchBtn');
+    const refreshBtn=document.getElementById('refreshBtn');
+    const cacheBadge=document.getElementById('cacheBadge');
+
+    // Admin : bouton relancer toujours visible
+    if(isAdmin()){
+      refreshBtn.style.display='';
+      launchBtn.style.display='none';
+      cacheBadge.style.display='none';
+    } else if(d._cached){
+      // Utilisateur normal avec cache
       const ago=Math.floor((Date.now()-new Date(d._cachedAt).getTime())/86400000);
-      document.getElementById('cacheBadge').textContent=`Analysé il y a ${ago===0?'aujourd\'hui':ago+'j'}`;
-      document.getElementById('cacheBadge').style.display='';
-      // refresh disabled for public users
+      cacheBadge.textContent=`Analysé il y a ${ago===0?'aujourd\'hui':ago+'j'}`;
+      cacheBadge.style.display='';
+      launchBtn.style.display='none';
+      refreshBtn.style.display='none';
+    } else if(d._pending){
+      // Pas de cache — afficher bouton lancer
+      launchBtn.textContent='⚡ Lancer l\'analyse';
+      launchBtn.style.display='';
+      launchBtn.disabled=false;
+      cacheBadge.style.display='none';
+      refreshBtn.style.display='none';
     }
 
-    renderAnalysis(d,q);
-    // Save to history
-    saveHistory(curStock.t,curStock.n,d.reco,d.target);
+    if(!d._pending){
+      renderAnalysis(d,q);
+      saveHistory(curStock.t,curStock.n,d.reco,d.target);
+    } else {
+      // Afficher message en attente
+      document.getElementById('vLoad').innerHTML='<span style="color:var(--muted);font-size:12px">⏳ Aucune analyse disponible — cliquez sur ⚡ Lancer l\'analyse</span>';
+    }
   }catch(e){
     document.getElementById('vLoad').innerHTML='<span style="color:var(--red);font-size:12px">Erreur lors de l\'analyse.</span>';
   }
 }
 
+async function userLaunchAnalysis(){
+  const btn=document.getElementById('launchBtn');
+  btn.textContent='⏳ Analyse en cours…';
+  btn.disabled=true;
+  // Déclenche cron-refresh pour ce ticker uniquement
+  try{
+    await fetch(`/api/cron-refresh?secret=public&ticker=${encodeURIComponent(curStock.t)}&force=true`);
+    showToast('Analyse lancée — résultat dans 5-10 min');
+    btn.textContent='⏳ En cours…';
+  }catch(e){
+    btn.textContent='⚡ Lancer l\'analyse';
+    btn.disabled=false;
+    showToast('Erreur lors du lancement');
+  }
+}
+
 async function forceRefresh(){
+  if(!isAdmin()){showToast('Accès réservé à l\'administrateur');return}
   document.getElementById('cacheBadge').style.display='none';
   document.getElementById('refreshBtn').style.display='none';
   resetUI();
