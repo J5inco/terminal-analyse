@@ -221,8 +221,6 @@ export default async function handler(req, res) {
       req.query.limit = '1';
       req.query.force = 'false';
     }
-
-    const q = req.query || {};
     const tickerParam = q.ticker ? String(q.ticker).trim().toUpperCase() : '';
     const force = isTrue(q.force);
     const dryRun = isTrue(q.dryRun);
