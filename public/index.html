@@ -1058,6 +1058,8 @@ async function launchAnalysis(q,force=false){
     } else {
       // Afficher message en attente
       document.getElementById('vLoad').innerHTML='<span style="color:var(--muted);font-size:12px">⏳ Aucune analyse disponible — cliquez sur ⚡ Lancer l\'analyse</span>';
+      // Charger quand même les dividendes Yahoo (v8/chart fonctionne sans quoteSummary)
+      loadYahooFinancials(q);
     }
   }catch(e){
     document.getElementById('vLoad').innerHTML='<span style="color:var(--red);font-size:12px">Erreur lors de l\'analyse.</span>';
@@ -1183,9 +1185,10 @@ function renderExpert(d,q){
   }
 
   // Financials
-  if(d.bnaHistory)drawLine('bnaChart',d.bnaHistory.labels,d.bnaHistory.data,'BNA','#22c55e');
-  if(d.divHistory)drawLine('divChart',d.divHistory.labels,d.divHistory.data,'Div.','#fbbf24');
-  if(d.debtHistory)drawBar('debtChart',d.debtHistory.labels,d.debtHistory.data,'Dette','#f87171');
+  if(d.bnaHistory&&d.bnaHistory.data&&d.bnaHistory.data.length>0)drawLine('bnaChart',d.bnaHistory.labels,d.bnaHistory.data,'BNA','#22c55e');
+  if(d.divHistory&&d.divHistory.data&&d.divHistory.data.length>0)drawLine('divChart',d.divHistory.labels,d.divHistory.data,'Div.','#fbbf24');
+  if(d.debtHistory&&d.debtHistory.data&&d.debtHistory.data.length>0)drawBar('debtChart',d.debtHistory.labels,d.debtHistory.data,'Dette','#f87171');
+  if(d.fcfAbsHistory&&d.fcfAbsHistory.data&&d.fcfAbsHistory.data.length>0)drawBar('fcfAbsChart',d.fcfAbsHistory.labels,d.fcfAbsHistory.data,`FCF (${d.fcfAbsHistory.unit||''})`,'#2dd4bf');
   document.getElementById('ratiosList').innerHTML=(d.ratios||[]).map(r=>`
     <div class="ratio-r"><span class="ratio-lb">${r.l}</span><span class="ratio-vl c-${r.c||'white'}">${r.v}</span></div>`).join('');
   document.getElementById('exVerdict').innerHTML=d.verdict||'';
@@ -1283,18 +1286,24 @@ async function loadChart(range,btn){
 async function loadYahooFinancials(q){
   try{
     const fd=await fetch(`/api/quote?ticker=${encodeURIComponent(curStock.t)}&mode=financials`).then(r=>r.json()).catch(()=>({}));
-    if(fd.error)return;
-    const sym=q.currency==='EUR'?'€':'$';
-    // Render financial charts with Yahoo data
-    if(fd.ca)drawBar('caChart',fd.ca.labels,fd.ca.data,`CA (${fd.ca.unit})`,'#3b82f6');
-    if(fd.earnings)drawEarnings('earnChart',fd.earnings);
-    if(fd.bnaHistory)drawLine('bnaChart',fd.bnaHistory.labels,fd.bnaHistory.data,'BNA','#22c55e');
-    if(fd.divHistory&&fd.divHistory.data.length>0)drawLine('divChart',fd.divHistory.labels,fd.divHistory.data,'Div.','#fbbf24');
-    if(fd.debtHistory)drawBar('debtChart',fd.debtHistory.labels,fd.debtHistory.data,'Dette','#f87171');
-    if(fd.fcfAbsHistory)drawBar('fcfAbsChart',fd.fcfAbsHistory.labels,fd.fcfAbsHistory.data,`FCF (${fd.fcfAbsHistory.unit})`,'#2dd4bf');
-    // Show expert mode tabs even without IA
-    document.getElementById('vContent').style.display='block';
-    document.getElementById('vLoad').style.display='none';
+    const noData='<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--muted);font-size:11px">Disponible après analyse IA</div>';
+    // CA
+    if(fd.ca&&fd.ca.data&&fd.ca.data.length>0)drawBar('caChart',fd.ca.labels,fd.ca.data,`CA (${fd.ca.unit})`,'#3b82f6');
+    else document.getElementById('caChart')&&(document.getElementById('caChart').innerHTML=noData);
+    // Earnings
+    if(fd.earnings&&fd.earnings.net&&fd.earnings.net.length>0)drawEarnings('earnChart',fd.earnings);
+    else document.getElementById('earnChart')&&(document.getElementById('earnChart').innerHTML=noData);
+    // BNA
+    if(fd.bnaHistory&&fd.bnaHistory.data&&fd.bnaHistory.data.length>0)drawLine('bnaChart',fd.bnaHistory.labels,fd.bnaHistory.data,'BNA','#22c55e');
+    else document.getElementById('bnaChart')&&(document.getElementById('bnaChart').innerHTML=noData);
+    // Dividendes — toujours affichés si dispo (v8/chart fonctionne)
+    if(fd.divHistory&&fd.divHistory.data&&fd.divHistory.data.length>0)drawLine('divChart',fd.divHistory.labels,fd.divHistory.data,'Div.','#fbbf24');
+    // Dette
+    if(fd.debtHistory&&fd.debtHistory.data&&fd.debtHistory.data.length>0)drawBar('debtChart',fd.debtHistory.labels,fd.debtHistory.data,'Dette','#f87171');
+    else document.getElementById('debtChart')&&(document.getElementById('debtChart').innerHTML=noData);
+    // FCF
+    if(fd.fcfAbsHistory&&fd.fcfAbsHistory.data&&fd.fcfAbsHistory.data.length>0)drawBar('fcfAbsChart',fd.fcfAbsHistory.labels,fd.fcfAbsHistory.data,`FCF (${fd.fcfAbsHistory.unit})`,'#2dd4bf');
+    else document.getElementById('fcfAbsChart')&&(document.getElementById('fcfAbsChart').innerHTML=noData);
   }catch(e){}
 }
 
@@ -1451,6 +1460,13 @@ function showExTab(tab,btn){
   document.getElementById(`et${tab.charAt(0).toUpperCase()+tab.slice(1)}`).classList.add('on');
   document.querySelectorAll('.ex-tab').forEach(b=>b.classList.remove('on'));
   btn.classList.add('on');
+  if(tab==='financials'){
+    setTimeout(()=>{
+      ['caChart','earnChart','bnaChart','divChart','debtChart','fcfAbsChart'].forEach(id=>{
+        if(charts[id])charts[id].resize();
+      });
+    },50);
+  }
 }
 
 // ══════════════════════════════════════════════════════
