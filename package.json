@@ -1,7 +1,6 @@
 {
   "name": "terminal-analyse",
   "version": "1.0.0",
-  "type": "module",
   "dependencies": {
     "yahoo-finance2": "^2.13.3",
     "@supabase/supabase-js": "^2.39.0"
