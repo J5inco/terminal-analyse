@@ -103,7 +103,7 @@ export default async function handler(req, res) {
       });
     }
 
-    const token = getAuthToken(req);
+    const token = getAuthToken(req) || String(req.query?.secret || "").trim();
     if (token !== CRON_SECRET) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
