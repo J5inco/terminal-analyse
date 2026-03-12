@@ -211,8 +211,15 @@ export default async function handler(req, res) {
     }
 
     const token = getAuthToken(req) || String(req.query?.secret || '').trim();
-    if (token !== CRON_SECRET) {
+    const q = req.query || {};
+    const isPublicSingleTicker = q.ticker && !q.force && token !== CRON_SECRET;
+    if (token !== CRON_SECRET && !isPublicSingleTicker) {
       return res.status(401).json({ error: 'Unauthorized' });
+    }
+    // Public calls: force=false, limit=1, single ticker only
+    if (isPublicSingleTicker) {
+      req.query.limit = '1';
+      req.query.force = 'false';
     }
 
     const q = req.query || {};
