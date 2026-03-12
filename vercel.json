@@ -5,13 +5,29 @@
     { "src": "/(.*)", "dest": "/public/index.html" }
   ],
   "crons": [
-    {
-      "path": "/api/cron-refresh",
-      "schedule": "0 2 1,15 * *"
-    },
-    {
-      "path": "/api/cron-collect",
-      "schedule": "20,40 2-5 1,15 * *"
-    }
+    { "path": "/api/cron-refresh", "schedule": "0 2 1,15 * *" },
+    { "path": "/api/cron-collect", "schedule": "0 3 1,15 * *" }
   ]
 }
+```
+
+Puis **Commit changes** directement sur `main`.
+
+---
+
+## Étape 2 — Vérifier le déploiement Vercel
+
+Après le commit, Vercel devrait se déclencher automatiquement (webhook GitHub → Vercel). Attends ~2 minutes puis vérifie sur le dashboard Vercel (`vercel.com/enzosoares10-4117/terminal-analyse`).
+
+**Si ça ne démarre pas** → ouvre ce lien dans ton navigateur pour forcer via deploy hook :
+```
+https://api.vercel.com/v1/integrations/deploy/prj_UBhd3ghvvhlNYV5bZrXft1hNBJPQ/tLNlB4M7AV
+```
+
+---
+
+## Étape 3 — Test manuel post-déploiement
+
+Une fois le build ✅, lance un refresh manuel :
+```
+https://terminal-analyse.vercel.app/api/cron-refresh?secret=j5cron2026secret&force=true
