@@ -79,10 +79,39 @@ function extractJsonFromAnthropicMessage(message) {
   const jsonMatch = clean.match(/\{[\s\S]*\}/);
 
   if (!jsonMatch) {
-    throw new Error('JSON introuvable dans la réponse IA');
+    throw new Error(`JSON introuvable. Debut reponse: ${clean.slice(0, 200)}`);
   }
 
-  return JSON.parse(jsonMatch[0]);
+  let jsonStr = jsonMatch[0];
+
+  // Try direct parse first
+  try {
+    return JSON.parse(jsonStr);
+  } catch(e1) {
+    // JSON truncated — try to salvage by closing open structures
+    try {
+      // Count open braces/brackets to close them
+      let openBraces = 0, openBrackets = 0, inString = false, escape = false;
+      for (const ch of jsonStr) {
+        if (escape) { escape = false; continue; }
+        if (ch === '\\') { escape = true; continue; }
+        if (ch === '"' && !escape) { inString = !inString; continue; }
+        if (inString) continue;
+        if (ch === '{') openBraces++;
+        else if (ch === '}') openBraces--;
+        else if (ch === '[') openBrackets++;
+        else if (ch === ']') openBrackets--;
+      }
+      // Close any open strings, brackets, braces
+      let salvaged = jsonStr.replace(/,\s*$/, '');
+      if (inString) salvaged += '"';
+      salvaged += ']'.repeat(Math.max(0, openBrackets));
+      salvaged += '}'.repeat(Math.max(0, openBraces));
+      return JSON.parse(salvaged);
+    } catch(e2) {
+      throw new Error(`JSON invalide: ${e1.message} | Debut: ${jsonStr.slice(0, 150)}`);
+    }
+  }
 }
 
 export default async function handler(req, res) {
